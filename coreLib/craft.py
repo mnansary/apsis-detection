@@ -56,10 +56,13 @@ def upconv(x, n, filters):
 
 
 
-def build_efficientnet_backbone(inputs, backbone_name, imagenet):
-    backbone = getattr(efficientnet, backbone_name)(include_top=False,
+def build_efficientnet_backbone(inputs,weights):
+    '''
+        uses efficientnet b7 
+    '''
+    backbone = tf.keras.applications.EfficientNetB7(include_top=False,
                                                     input_tensor=inputs,
-                                                    weights='imagenet' if imagenet else None)
+                                                    weights=weights)
     return [
         backbone.get_layer(slice_name).output for slice_name in [
             'block2a_expand_activation', 'block3a_expand_activation', 'block4a_expand_activation',
@@ -68,12 +71,18 @@ def build_efficientnet_backbone(inputs, backbone_name, imagenet):
     ]
 
 
-def model():
-    inputs = keras.layers.Input((None, None, 3))
+def model(input_shape=(512,512,3),weights=None):
+    '''
+        creates the craft model
+        args:
+            input_shape   :   the input shape of each image (defalut:(512,512,3))
+            weights       :   weights for transfer learning (default:None, Available:imagenet)
+        returns:
+            a tf.keras model 
+    '''
+    inputs = keras.layers.Input(input_shape)
 
-    s1, s2, s3, s4 = build_efficientnet_backbone(inputs=inputs,
-                                                    backbone_name=backbone_name,
-                                                    imagenet=weights_path is None)
+    s1, s2, s3, s4 = build_efficientnet_backbone(inputs=inputs,weights=weights)
 
     s5 = keras.layers.MaxPooling2D(pool_size=3, strides=1, padding='same',
                                    name='basenet.slice5.0')(s4)
@@ -115,8 +124,7 @@ def model():
     y = keras.layers.Activation('relu', name='conv_cls.7')(y)
     y = keras.layers.Conv2D(filters=2, kernel_size=1, strides=1, padding='same',
                             name='conv_cls.8')(y)
-    if backbone_name != 'vgg':
-        y = keras.layers.Activation('sigmoid')(y)
+    y = keras.layers.Activation('sigmoid')(y)
     model = keras.models.Model(inputs=inputs, outputs=y)
     
     return model
