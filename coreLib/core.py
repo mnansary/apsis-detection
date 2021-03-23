@@ -43,6 +43,8 @@ class CONFIG:
     VERT_MAX_SPACE  =   50
     HORZ_MIN_SPACE  =   15
     HORZ_MAX_SPACE  =   50
+    # wrapping
+    MAX_WARP_PERC   =   10
 # data frames
 num_df  =   pd.read_csv(CONFIG.NUMBER_CSV)
 char_df =   pd.read_csv(CONFIG.GRAPHEME_CSV)
@@ -96,10 +98,7 @@ def getSymImg(img_path,Type=None):
     img_width= int(CONFIG.SYM_HEIGHT* w/h) 
     img=cv2.resize(img,(img_width,CONFIG.SYM_HEIGHT),fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
     # invert
-    img=img/255.0
-    img=1-img
-    img=img*255
-    img=img.astype("uint8") 
+    img=255-img
     return img
 
 #--------------------
@@ -138,13 +137,21 @@ def createDateImage(year_len,raw_nums_path,iden_val):
             
 
     '''
+    
     day_data,iden_val        = createNumberImage(2,raw_nums_path,iden_val)
-    month_data,iden_val      = createNumberImage(2,raw_nums_path,iden_val)
-    year_data,iden_val       = createNumberImage(year_len,raw_nums_path,iden_val)
     img                      = getSymImg(random.choice(CONFIG.SEPARATORS))
-    separator_data           = [[img,"/",iden_val]]
-    iden_val                 += 1  
-    return  day_data+separator_data+month_data+separator_data+year_data,iden_val    
+    img[img>0]               = iden_val
+    separator_data_1         = [[img,"/",iden_val]]
+    iden_val+=1
+
+    month_data,iden_val      = createNumberImage(2,raw_nums_path,iden_val)
+    img                      = getSymImg(random.choice(CONFIG.SEPARATORS))
+    img[img>0]               = iden_val
+    separator_data_2         = [[img,"/",iden_val]]
+    iden_val+=1
+    
+    year_data,iden_val       = createNumberImage(year_len,raw_nums_path,iden_val)
+    return  day_data+separator_data_1+month_data+separator_data_2+year_data,iden_val    
 
 def createWordImage(word_len,raw_path,iden_val):
     '''
@@ -186,39 +193,11 @@ def padLineLeftRight(max_line_width,line_img):
     left_pad_width =random.randint(0,(max_line_width-w))
     right_pad_width=max_line_width-w-left_pad_width
     # pads
-    left_pad =np.zeros((h,left_pad_width))
-    right_pad=np.zeros((h,right_pad_width))
+    left_pad =np.zeros((h,left_pad_width),dtype=np.int64)
+    right_pad=np.zeros((h,right_pad_width),dtype=np.int64)
     # pad
     line_img =np.concatenate([left_pad,line_img,right_pad],axis=1)
     return line_img
-
-def getRotationMatrix(page_img):
-    '''
-        @author: https://github.com/faustomorales
-        **remoduled as needed** by @author:Nazmuddoha Ansary
-        provides a rotation matrix about the center of a rectangle 
-        args:
-            img : the image for taking height and width
-        returns:
-            A 3x3 transformation matrix
-    '''
-    h,w=page_img.shape
-    height,width=int(h+2*CONFIG.DATA_DIM),int(w+2*CONFIG.DATA_DIM)
-    thetaX,thetaY,thetaZ=[np.random.uniform(low=rotation[0], high=rotation[1]) * np.pi / 180
-                         for rotation in [(-0.05, 0.05),
-                                           (-0.05, 0.05),
-                                           (-15,15)]]  
-    # translation 
-    translate1 = np.array([[1, 0, width / 2], [0, 1, height / 2], [0, 0, 1]])
-    rotX = np.array([[1, 0, 0], [0, np.cos(thetaX), -np.sin(thetaX)],
-                     [0, np.sin(thetaX), np.cos(thetaX)]])
-    rotY = np.array([[np.cos(thetaY), 0, np.sin(thetaY)], [0, 1, 0],
-                     [-np.sin(thetaY), 0, np.cos(thetaY)]])
-    rotZ = np.array([[np.cos(thetaZ), -np.sin(thetaZ), 0], [np.sin(thetaZ),
-                                                            np.cos(thetaZ), 0], [0, 0, 1]])
-    translate2 = np.array([[1, 0, -width / 2], [0, 1, -height / 2], [0, 0, 1]])
-    M = translate1.dot(rotX).dot(rotY).dot(rotZ).dot(translate2)
-    return M
 
 def createLabeledImage(raw_path,
                        raw_nums_path,
@@ -279,7 +258,7 @@ def createLabeledImage(raw_path,
                 # add pad 
                 part_pad=np.ones((CONFIG.SYM_HEIGHT,
                                   random.randint(CONFIG.HORZ_MIN_SPACE,
-                                                 CONFIG.HORZ_MAX_SPACE)))*iden_val
+                                                 CONFIG.HORZ_MAX_SPACE)),dtype=np.int64)*iden_val
                 page_anon.append({"ImageId":_img_id,
                                   "LineNumber":_line,
                                   "IdenValue":iden_val,
@@ -325,12 +304,51 @@ def createLabeledImage(raw_path,
     page_img=np.concatenate(paded_parts,axis=0)
     # page anon
     page_anon=pd.DataFrame(page_anon)
-    # image transfrom
-    h,w=page_img.shape
-    M=getRotationMatrix(page_img)
-    page_img = cv2.warpPerspective(page_img,M,(int(w+2*CONFIG.DATA_DIM),int(h+2*CONFIG.DATA_DIM)), 
-                                   cv2.INTER_NEAREST,
-                                   borderMode=cv2.BORDER_CONSTANT, 
-                                   borderValue=0)
-    page_img = stripPads(page_img,0)
+    # add coords
+    COORDS=[]
+    for i in page_anon.IdenValue.tolist():
+        try:
+            idx = np.where(page_img==i)
+            y_min,y_max,x_min,x_max = np.min(idx[0]), np.max(idx[0]), np.min(idx[1]), np.max(idx[1])
+            x1,x2,x3,x4=x_min,x_max,x_max,x_min
+            y1,y2,y3,y4=y_min,y_min,y_max,y_max
+            coords=np.array([[x1,y1],[x2,y2],[x3,y3],[x4,y4]],dtype="float32")
+            COORDS.append(coords)
+        except Exception as e:
+            print(i,e)
+    page_anon["Coords"]=COORDS
+    # shape image
+    
+    df_space=page_anon.loc[page_anon.Label==' ']
+    space_vals=df_space.IdenValue.tolist()
+    for sv in space_vals:
+        page_img[page_img==sv]=0
+    page_img[page_img>0]=255
+    page_img=page_img.astype("uint8")
+    page_img=255-page_img
+    # transformation
+    # gets height and width
+    height,width=page_img.shape
+    # location of source
+    src    = np.float32([[0,0], 
+                         [width-1,0], 
+                         [width-1,height-1], 
+                         [0,height-1]])
+    # construct destination
+    left_warp =int((CONFIG.DATA_DIM*random.randint(0,CONFIG.MAX_WARP_PERC) )/100)
+    right_warp=CONFIG.DATA_DIM-int((CONFIG.DATA_DIM*random.randint(0,CONFIG.MAX_WARP_PERC) )/100)
+    dst    = np.float32([[left_warp,0], 
+                         [right_warp,0], 
+                         [CONFIG.DATA_DIM-1,CONFIG.DATA_DIM-1], 
+                         [0,CONFIG.DATA_DIM-1]])
+    M   = cv2.getPerspectiveTransform(src, dst)
+    page_img = cv2.warpPerspective(page_img, M, (CONFIG.DATA_DIM,
+                                          CONFIG.DATA_DIM))
+    
+    # co-ords
+    TRANSFORMED=[]
+    for coords in page_anon.Coords.tolist():
+        TRANSFORMED.append(cv2.perspectiveTransform(src=coords[np.newaxis], m=M)[0])
+    # df
+    page_anon["data"]=TRANSFORMED
     return page_img,page_anon         
