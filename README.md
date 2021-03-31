@@ -46,10 +46,10 @@ Gnome       : 3.28.2
 * **UpsampleLike** layer is tf-1 compat : https://github.com/tensorflow/tensorflow/issues/45207
 
 # TODO
-- [] add background
-- [] add more post ops
-- [] add a class for MEMO data
-- [] add horizontal linking operation
+- [ ] add background
+- [ ] add more post ops
+- [ ] add a class for MEMO data
+- [ ] add horizontal linking operation
 
 # DataSet
 * run **data.py**
