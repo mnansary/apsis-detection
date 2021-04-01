@@ -72,3 +72,17 @@ Gnome       : 3.28.2
     --iden IDEN          identifier of the created dataset : default=baseData
 
 ```
+* run **tfrecs.py**
+```python
+    usage: script to create tfrecords [-h] [--data_size DATA_SIZE]
+                                    data_path save_path
+
+    positional arguments:
+    data_path             Path of the data folder that contains Test and Train
+    save_path             Path to save the tfrecords
+
+    optional arguments:
+    -h, --help            show this help message and exit
+    --data_size DATA_SIZE
+                            the size of tfrecords
+```

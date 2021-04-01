@@ -12,7 +12,7 @@ import json
 import pandas as pd
 from tqdm import tqdm
 import sys 
-
+import cv2 
 from coreLib.utils import LOG_INFO,create_dir
 from coreLib.core  import create_single_data
 #--------------------
@@ -86,7 +86,7 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser("Craft Detection Training Dataset Creating Script")
     parser.add_argument("data_path", help="Path of the data folder that contains converted and raw folder from ReadMe.md)")
     parser.add_argument("save_path", help="Path of the directory to save the dataset")
-    parser.add_argument("--num_data",required=False,default=100000,help ="number of image data to create : default=100000")
+    parser.add_argument("--num_data",required=False,default=10000,help ="number of image data to create : default=10000")
     parser.add_argument("--iden",required=False,default="baseData",help ="identifier of the created dataset : default=baseData")
     args = parser.parse_args()
     main(args)
