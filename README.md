@@ -23,7 +23,7 @@ Gnome       : 3.28.2
 * ```pip3 install pillow --global-option="build_ext" --global-option="--enable-freetype"```
 * ```pip3 install -r requirements.txt``` 
 > Its better to use a virtual environment 
-# Dataset
+# Input Dataset
 * **caution**: Do not change anything under **resources**. The directory should look as follows
 ```python
     ├── graphemes.csv
@@ -51,7 +51,7 @@ Gnome       : 3.28.2
 - [ ] add a class for MEMO data
 - [ ] add horizontal linking operation
 
-# DataSet
+# Created-DataSet
 * run **data.py**
 
 ```python
@@ -86,3 +86,6 @@ Gnome       : 3.28.2
     --data_size DATA_SIZE
                             the size of tfrecords
 ```
+# Inference
+* download the [pretrained model](https://www.kaggle.com/nazmuddhohaansary/craft-train/output)
+* set propper location of the model weights in **inference.ipynb**

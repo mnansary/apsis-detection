@@ -131,3 +131,4 @@ dmypy.json
 debug.ipynb 
 tests/*
 __modeling__/*
+models/*

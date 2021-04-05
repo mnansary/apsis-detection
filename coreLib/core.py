@@ -715,3 +715,114 @@ def create_single_data(raw_path,
     # get textmap and linkmap
     textmap,linkmap=compute_maps(lines)
     return img,df,textmap,linkmap
+#--------------------
+# detection utils
+#--------------------
+#--------------------------------------------------------------------------------------------
+def drawBoxes(image, boxes, color=(255, 0, 0), thickness=5, boxes_format='boxes'):
+    """Draw boxes onto an image.
+    Args:
+        image: The image on which to draw the boxes.
+        boxes: The boxes to draw.
+        color: The color for each box.
+        thickness: The thickness for each box.
+        boxes_format: The format used for providing the boxes. Options are
+            "boxes" which indicates an array with shape(N, 4, 2) where N is the
+            number of boxes and each box is a list of four points) as provided
+            by `keras_ocr.detection.Detector.detect`, "lines" (a list of
+            lines where each line itself is a list of (box, character) tuples) as
+            provided by `keras_ocr.data_generation.get_image_generator`,
+            or "predictions" where boxes is by itself a list of (word, box) tuples
+            as provided by `keras_ocr.pipeline.Pipeline.recognize` or
+            `keras_ocr.recognition.Recognizer.recognize_from_boxes`.
+    """
+    if len(boxes) == 0:
+        return image
+    canvas = image.copy()
+    if boxes_format == 'lines':
+        revised_boxes = []
+        for line in boxes:
+            for box, _ in line:
+                revised_boxes.append(box)
+        boxes = revised_boxes
+    if boxes_format == 'predictions':
+        revised_boxes = []
+        for _, box in boxes:
+            revised_boxes.append(box)
+        boxes = revised_boxes
+    for box in boxes:
+        cv2.polylines(img=canvas,
+                      pts=box[np.newaxis].astype('int32'),
+                      color=color,
+                      thickness=thickness,
+                      isClosed=True)
+    return canvas
+
+
+def getBoxes(textmap,
+            linkmap,
+            detection_threshold=0.7,
+            text_threshold=0.4,
+            link_threshold=0.4,
+            size_threshold=10):
+    '''
+        creates boxes from textmap and linkmap
+        args:
+            textmap  :  the h/2,w/2 textmap created from gaussian map
+            linkmap  :  the h/2,w/2 linkmap created from gaussian map
+    '''
+    # get shape
+    img_h, img_w = textmap.shape
+    # get thresholded scores
+    _, text_score = cv2.threshold(textmap,thresh=text_threshold,maxval=1,type=cv2.THRESH_BINARY)
+    _, link_score = cv2.threshold(linkmap,thresh=link_threshold,maxval=1,type=cv2.THRESH_BINARY)
+    # get connected components
+    n_components, labels, stats, _ = cv2.connectedComponentsWithStats(np.clip(text_score + link_score, 0, 1).astype('uint8'),connectivity=4)
+    boxes = []
+    for component_id in range(1, n_components):
+        # Filter by size
+        size = stats[component_id, cv2.CC_STAT_AREA]
+
+        if size < size_threshold:
+            continue
+
+        # If the maximum value within this connected component is less than
+        # text threshold, we skip it.
+        if np.max(textmap[labels == component_id]) < detection_threshold:
+            continue
+
+        # Make segmentation map. It is 255 where we find text, 0 otherwise.
+        segmap = np.zeros_like(textmap)
+        segmap[labels == component_id] = 255
+        segmap[np.logical_and(link_score, text_score)] = 0
+        x, y, w, h = [stats[component_id, key] for key in
+                        [cv2.CC_STAT_LEFT, cv2.CC_STAT_TOP, cv2.CC_STAT_WIDTH, cv2.CC_STAT_HEIGHT]]
+
+        # Expand the elements of the segmentation map
+        niter = int(np.sqrt(size * min(w, h) / (w * h)) * 2)
+        sx, sy = max(x - niter, 0), max(y - niter, 0)
+        ex, ey = min(x + w + niter + 1, img_w), min(y + h + niter + 1, img_h)
+        segmap[sy:ey, sx:ex] = cv2.dilate(
+            segmap[sy:ey, sx:ex],
+            cv2.getStructuringElement(cv2.MORPH_RECT, (1 + niter, 1 + niter)))
+
+        # Make rotated box from contour
+        contours = cv2.findContours(segmap.astype('uint8'),
+                                    mode=cv2.RETR_TREE,
+                                    method=cv2.CHAIN_APPROX_SIMPLE)[-2]
+        contour = contours[0]
+        box = cv2.boxPoints(cv2.minAreaRect(contour))
+
+        # Check to see if we have a diamond
+        w, h = np.linalg.norm(box[0] - box[1]), np.linalg.norm(box[1] - box[2])
+        box_ratio = max(w, h) / (min(w, h) + 1e-5)
+        if abs(1 - box_ratio) <= 0.1:
+            l, r = contour[:, 0, 0].min(), contour[:, 0, 0].max()
+            t, b = contour[:, 0, 1].min(), contour[:, 0, 1].max()
+            box = np.array([[l, t], [r, t], [r, b], [l, b]], dtype=np.float32)
+        else:
+            # Make clock-wise order
+            box = np.array(np.roll(box, 4 - box.sum(axis=1).argmin(), 0))
+        boxes.append(2 * box)
+    
+    return boxes
