@@ -128,7 +128,6 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-debug.ipynb 
 tests/*
 __modeling__/*
 models/*

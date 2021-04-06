@@ -74,7 +74,7 @@ def get_gaussian_heatmap(size=512, distanceRatio=1.5):
     g *= 255
     return g.clip(0, 255).astype('uint8')
 # fixed heatmap
-heatmap_text=get_gaussian_heatmap(size=CONFIG.DATA_DIM,distanceRatio=3.5)
+heatmap_text=get_gaussian_heatmap(size=CONFIG.DATA_DIM,distanceRatio=2.5)
 heatmap_link=get_gaussian_heatmap(size=CONFIG.DATA_DIM,distanceRatio=1.5)
 
 #--------------------
