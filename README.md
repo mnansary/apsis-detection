@@ -1,8 +1,10 @@
 # banglaCraft
 banga Dataset for CRAFTS and CRAFT
 ```python
-Version: 0.0.1     
-Authors: Md. Nazmuddoha Ansary, 
+Version: 0.0.3     
+Authors: Md. Nazmuddoha Ansary,
+         Md. Rezwanul Haque,
+         Md. Mobassir Hossain 
 ```
 **LOCAL ENVIRONMENT**  
 ```python
@@ -20,72 +22,43 @@ Gnome       : 3.28.2
 
 **python requirements**
 
-* ```pip3 install pillow --global-option="build_ext" --global-option="--enable-freetype"```
 * ```pip3 install -r requirements.txt``` 
 > Its better to use a virtual environment 
+
+
 # Input Dataset
-* **caution**: Do not change anything under **resources**. The directory should look as follows
-```python
-    ├── graphemes.csv
-    └── numbers.csv
-```
-* The **grapheme** dataset is taken from [here](https://www.kaggle.com/pestipeti/bengali-quick-eda/#data). 
-    * Only the **256** folder under **256_train** is kept and renamed as **RAW** form **BengaliAI:Supplementary dataset for BengaliAI Competition**
-* The **number** dataset is taken from [here](https://www.kaggle.com/nazmuddhohaansary/banglasymbols) 
-    * Only the **RAW_NUMS** folder is kept that contains all the images of the numbers
-* The final **data** folder is like as follows:
+* The overall dataset is available here: https://www.kaggle.com/nazmuddhohaansary/sourcedata
+* The folder structre should look as follows:
 
 ```python
-    data
-    ├── RAW_NUMS
-    └── RAW
+        sourcedata
+        ├── bangla
+        │   ├── graphemes.csv
+        │   ├── numbers.csv
+        │   ├── dictionary.csv
+        │   ├── fonts
+        │   ├── graphemes
+        │   └── numbers
+        ├── common
+        │   ├── symbols.csv
+        │   ├── background
+        │   ├── noise
+        │   │   ├── random
+        │   │   └── signature
+        │   └── symbols
+        └── english
+            ├── graphemes.csv
+            ├── numbers.csv
+            ├── dictionary.csv
+            ├── fonts
+            ├── graphemes
+            └── numbers    
 ```
+* The path for the **sourcedata** folder is the **src_path** used in **main.py**
+* The dataset is collected and compiled from vairous sources such as:
+    * The bangla **grapheme** dataset is taken from [here](https://www.kaggle.com/pestipeti/bengali-quick-eda/#data). 
+        * Only the **256** folder under **256_train** is kept and renamed as **RAW** form **BengaliAI:Supplementary dataset for BengaliAI Competition**
+    * The bangla **number** dataset is taken from [here](https://www.kaggle.com/nazmuddhohaansary/banglasymbols) 
+        * Only the **RAW_NUMS** folder is kept that contains all the images of the numbers
+    
 
-
-# ISSUES FACED
-* **UpsampleLike** layer is tf-1 compat : https://github.com/tensorflow/tensorflow/issues/45207
-
-# TODO
-- [ ] add background
-- [ ] add more post ops
-- [ ] add a class for MEMO data
-- [ ] add horizontal linking operation
-
-# Created-DataSet
-* run **data.py**
-
-```python
-
-    usage: Craft Detection Training Dataset Creating Script [-h]
-                                                            [--num_data NUM_DATA]
-                                                            [--iden IDEN]
-                                                            data_path save_path
-
-    positional arguments:
-    data_path            Path of the data folder that contains converted and raw
-                        folder from ReadMe.md)
-    save_path            Path of the directory to save the dataset
-
-    optional arguments:
-    -h, --help           show this help message and exit
-    --num_data NUM_DATA  number of image data to create : default=100000
-    --iden IDEN          identifier of the created dataset : default=baseData
-
-```
-* run **tfrecs.py**
-```python
-    usage: script to create tfrecords [-h] [--data_size DATA_SIZE]
-                                    data_path save_path
-
-    positional arguments:
-    data_path             Path of the data folder that contains Test and Train
-    save_path             Path to save the tfrecords
-
-    optional arguments:
-    -h, --help            show this help message and exit
-    --data_size DATA_SIZE
-                            the size of tfrecords
-```
-# Inference
-* download the [pretrained model](https://www.kaggle.com/nazmuddhohaansary/craft-train/output)
-* set propper location of the model weights in **inference.ipynb**

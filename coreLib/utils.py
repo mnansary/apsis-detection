@@ -8,6 +8,7 @@ from __future__ import print_function
 #---------------------------------------------------------------
 from termcolor import colored
 import os 
+import numpy as np
 #---------------------------------------------------------------
 def LOG_INFO(msg,mcolor='blue'):
     '''
@@ -29,4 +30,12 @@ def create_dir(base,ext):
     if not os.path.exists(_path):
         os.mkdir(_path)
     return _path
+#---------------------------------------------------------------
+def stripPads(arr,val):
+  '''
+      strip specific values
+  '''
+  arr=arr[~np.all(arr == val, axis=1)]
+  arr=arr[:, ~np.all(arr == val, axis=0)]
+  return arr
 #---------------------------------------------------------------
