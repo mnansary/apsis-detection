@@ -1,5 +1,5 @@
-# banglaCraft
-banga Dataset for CRAFTS and CRAFT
+# synthdata
+
 ```python
 Version: 0.0.3     
 Authors: Md. Nazmuddoha Ansary,
