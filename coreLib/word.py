@@ -84,6 +84,9 @@ def createPrintedWords(iden,
             label   :       dictionary of label {iden:label}
             iden    :       the final identifier
     '''
+    # sets the value
+    val_offset=iden
+
     comps=[str(comp) for comp in comps]
     # select a font size
     font_size=config.comp_dim
@@ -102,22 +105,26 @@ def createPrintedWords(iden,
     font_path=random.choice(fonts)
     font=PIL.ImageFont.truetype(font_path, size=font_size)
     # sizes of comps
-    comp_sizes = [font.font.getsize(comp) for comp in comps] 
+    # comp_sizes = [font.font.getsize(comp) for comp in comps] 
     # construct labels
     label={}
     imgs=[]
     x=0
     y=0
-    for comp,comp_size in zip(comps,comp_sizes):
-        # calculate increment
-        (comp_width,_),(offset,_)=comp_size
-        dx = comp_width+offset 
+    comp_str=''
+    for comp in comps:
+        comp_str+=comp
+        # # calculate increment
+        # (comp_width,_),(offset,_)=comp_size
+        # dx = comp_width+offset 
         # draw
         image = PIL.Image.new(mode='L', size=(max_dim,max_dim))
         draw = PIL.ImageDraw.Draw(image)
-        draw.text(xy=(x, y), text=comp, fill=iden, font=font)
+        #draw.text(xy=(x, y), text=comp, fill=iden, font=font)
+        draw.text(xy=(0, 0), text=comp_str, fill=1, font=font)
+        
         imgs.append(np.array(image))
-        x+=dx
+        # x+=dx
         # label
         label[iden] = comp 
         iden+=1
@@ -126,6 +133,8 @@ def createPrintedWords(iden,
     # add images
     img=sum(imgs)
     img=stripPads(img,0)
+    # offset
+    img[img>0]+=val_offset-1
     return img,label,iden
 
 
