@@ -18,9 +18,12 @@ class config:
     max_num_len     =   10
     # comp dimension
     comp_dim        =   128
-    # # margin space
-    # vert_min_space  =   30
-    # vert_max_space  =   100
+    # symbol
+    min_num_sym     =   1
+    max_mun_sym     =   5
+    # word space
+    word_min_space  =   30
+    word_max_space  =   100
     # horz_min_space  =   60
     # horz_max_space  =   100
     # # wrapping

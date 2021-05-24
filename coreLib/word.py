@@ -23,17 +23,25 @@ tqdm.pandas()
 #--------------------
 # word functions 
 #--------------------
+def addSpace(img,iden):
+    '''
+        adds a space at the end of the word
+    '''
+    h,_=img.shape
+    width=random.randint(config.word_min_space,config.word_max_space)
+    space=np.ones((h,width))*iden
+    return np.concatenate([img,space],axis=1)
+
+
 def createHandwritenWords(iden,
                          df,
-                         comps,
-                         img_dir):
+                         comps):
     '''
         creates handwriten word image
         args:
             iden    :       identifier marking value starting
             df      :       the dataframe that holds the file name and label
-            comps   :       the list of components
-            img_dir :       the directory that contains images 
+            comps   :       the list of components 
         returns:
             img     :       marked word image
             label   :       dictionary of label {iden:label}
@@ -53,7 +61,7 @@ def createHandwritenWords(iden,
         c_df=df.loc[df.label==comp]
         # select a image file
         idx=random.randint(0,len(c_df)-1)
-        img_path=os.path.join(img_dir,f"{c_df.iloc[idx,0]}.bmp") 
+        img_path=c_df.iloc[idx,2] 
         # read image
         img=cv2.imread(img_path,0)
         # resize
@@ -68,6 +76,10 @@ def createHandwritenWords(iden,
         label[iden] = comp 
         iden+=1
     img=np.concatenate(imgs,axis=1)
+    # add space
+    img=addSpace(img,iden)
+    label[iden]=' '
+    iden+=1
     return img,label,iden
 
 def createPrintedWords(iden,
@@ -134,8 +146,19 @@ def createPrintedWords(iden,
     img=sum(imgs)
     img=stripPads(img,0)
     # offset
-    img[img>0]+=val_offset-1
-    return img,label,iden
+    vals=list(np.unique(img))
+    vals=sorted(vals,reverse=True)
+    vals=vals[:-1]
+    
+    _img=np.zeros(img.shape)
+    for v,l in zip(vals,label.keys()):
+        _img[img==v]=l
+    
+    # add space
+    _img=addSpace(_img,iden)
+    label[iden]=' '
+    iden+=1
+    return _img,label,iden
 
 
 #-----------------------------------
@@ -157,31 +180,39 @@ def create_word(iden,
             ds                      :       the dataset object
             use_dict                :       use a dictionary word (if not used then random data is generated)
     '''
+    # using symbols
+    if random.choices(population=[0,1],weights=[0.8, 0.2],k=1)[0]==1:
+        use_symbols =   True
+        sdf         =   ds.common.symbols.df
+        num_sym     =   random.randint(config.min_num_sym,config.max_mun_sym)
+        syms=[]
+        for _ in range(num_sym):
+            idx=random.randint(0,len(sdf)-1)
+            syms.append(sdf.iloc[idx,1])
+    else:
+        use_symbols =   False
+        
+    
     # set resources
     if source_type=="bangla":
         dict_df  =ds.bangla.dictionary 
         
         g_df     =ds.bangla.graphemes.df 
-        g_dir    =ds.bangla.graphemes.dir
         
         n_df     =ds.bangla.numbers.df 
-        n_dir    =ds.bangla.numbers.dir
         
         fonts    =[font_path for font_path in glob(os.path.join(ds.bangla.fonts,"*.*")) if "ANSI" not in font_path]
     elif source_type=="english":
         dict_df  =ds.english.dictionary 
         
         g_df     =ds.english.graphemes.df 
-        g_dir    =ds.english.graphemes.dir
         
         n_df     =ds.english.numbers.df 
-        n_dir    =ds.english.numbers.dir
         
         fonts    =[font_path for font_path in glob(os.path.join(ds.english.fonts,"*.*"))]
 
     # component selection 
     if comp_type=="grapheme":
-        img_dir=g_dir
         # dictionary
         if use_dict:
             # select index from the dict
@@ -195,9 +226,7 @@ def create_word(iden,
                 idx=random.randint(0,len(g_df)-1)
                 comps.append(g_df.iloc[idx,1])
         df=g_df
-    
     elif comp_type=="number":
-        img_dir=n_dir
         comps=[]
         len_word=random.randint(config.min_word_len,config.max_word_len)
         for _ in range(len_word):
@@ -205,9 +234,14 @@ def create_word(iden,
             comps.append(n_df.iloc[idx,1])
         df=n_df
 
+    # moderation for using symbols
+    if use_symbols:
+        comps+=syms
+        df=pd.concat([df,sdf],ignore_index=True)
+    
     # process data
     if data_type=="handwritten":
-        return createHandwritenWords(iden=iden,df=df,comps=comps,img_dir=img_dir)
+        return createHandwritenWords(iden=iden,df=df,comps=comps)
     else:
         return createPrintedWords(iden=iden,comps=comps,fonts=fonts)
 

@@ -60,15 +60,15 @@ class DataSet(object):
         self.__checkExistance()
 
         # get dfs
-        self.bangla.graphemes.df=self.__getDataFrame(self.bangla.graphemes.csv)
-        self.bangla.numbers.df  =self.__getDataFrame(self.bangla.numbers.csv)
+        self.bangla.graphemes.df=self.__getDataFrame(self.bangla.graphemes)
+        self.bangla.numbers.df  =self.__getDataFrame(self.bangla.numbers)
         self.bangla.dictionary  =self.__getDataFrame(self.bangla.dict_csv,is_dict=True)
 
-        self.english.graphemes.df=self.__getDataFrame(self.english.graphemes.csv)
-        self.english.numbers.df  =self.__getDataFrame(self.english.numbers.csv,int_label=True)
+        self.english.graphemes.df=self.__getDataFrame(self.english.graphemes)
+        self.english.numbers.df  =self.__getDataFrame(self.english.numbers,int_label=True)
         self.english.dictionary  =self.__getDataFrame(self.english.dict_csv,is_dict=True)
         
-        self.common.symbols.df   =self.__getDataFrame(self.common.symbols.csv)
+        self.common.symbols.df   =self.__getDataFrame(self.common.symbols)
         # data validity
         self.__checkDataValidity(self.bangla.graphemes,"bangla.graphemes")
         self.__checkDataValidity(self.bangla.numbers,"bangla.numbers")
@@ -89,25 +89,30 @@ class DataSet(object):
         
         
         
-    def __getDataFrame(self,csv,is_dict=False,int_label=False):
+    def __getDataFrame(self,obj,is_dict=False,int_label=False):
         '''
             creates the dataframe from a given csv file
             args:
-                csv       =   csv file path
+                obj       =   csv file path or class 
                 is_dict   =   only true if the given is a dictionary 
                 int_label =   if the labels are int convert string
         '''
         try:
-            df=pd.read_csv(csv)
+            
             if is_dict:
-                assert "word" in df.columns,f"word column not found:{csv}"
-                assert "graphemes" in df.columns,f"graphemes column not found:{csv}"
+                df=pd.read_csv(obj)
+                assert "word" in df.columns,f"word column not found:{obj}"
+                assert "graphemes" in df.columns,f"graphemes column not found:{obj}"
                  
-                LOG_INFO(f"Processing Dictionary:{csv}")
+                LOG_INFO(f"Processing Dictionary:{obj}")
                 df.graphemes=df.graphemes.progress_apply(lambda x: literal_eval(x))
             else:
+                csv=obj.csv
+                img_dir=obj.dir
+                df=pd.read_csv(csv)
                 assert "filename" in df.columns,f"filename column not found:{csv}"
                 assert "label" in df.columns,f"label column not found:{csv}"
+                df["img_path"]=df["filename"].progress_apply(lambda x:os.path.join(img_dir,f"{x}.bmp"))
                 if int_label:
                     LOG_INFO("converting int labels to string")
                     df.label=df.label.progress_apply(lambda x: str(x))
