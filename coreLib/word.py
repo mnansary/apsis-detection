@@ -158,6 +158,12 @@ def createPrintedWords(iden,
     _img=addSpace(_img,iden)
     label[iden]=' '
     iden+=1
+    # resize
+    # resize
+    h,w=img.shape 
+    width= int(font_size* w/h) 
+    
+    img=cv2.resize(img,(width,font_size),fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
     return _img,label,iden
 
 
@@ -176,7 +182,7 @@ def create_word(iden,
             iden                    :       identifier marking value starting
             source_type             :       bangla/english 
             data_type               :       handwritten/printed                  
-            comp_type               :       grapheme/number
+            comp_type               :       grapheme/number/mixed
             ds                      :       the dataset object
             use_dict                :       use a dictionary word (if not used then random data is generated)
     '''
@@ -233,6 +239,15 @@ def create_word(iden,
             idx=random.randint(0,len(n_df)-1)
             comps.append(n_df.iloc[idx,1])
         df=n_df
+    else:
+        use_symbols=False
+        sdf         =   ds.common.symbols.df
+        df=pd.concat([g_df,n_df,sdf],ignore_index=True)
+        comps=[]
+        len_word=random.randint(config.min_word_len,config.max_word_len)
+        for _ in range(len_word):
+            idx=random.randint(0,len(df)-1)
+            comps.append(df.iloc[idx,1])
 
     # moderation for using symbols
     if use_symbols:
