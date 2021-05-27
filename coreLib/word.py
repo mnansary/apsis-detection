@@ -96,9 +96,7 @@ def createPrintedWords(iden,
             label   :       dictionary of label {iden:label}
             iden    :       the final identifier
     '''
-    # sets the value
-    val_offset=iden
-
+    
     comps=[str(comp) for comp in comps]
     # select a font size
     font_size=config.comp_dim
@@ -121,8 +119,6 @@ def createPrintedWords(iden,
     # construct labels
     label={}
     imgs=[]
-    x=0
-    y=0
     comp_str=''
     for comp in comps:
         comp_str+=comp
@@ -160,10 +156,10 @@ def createPrintedWords(iden,
     iden+=1
     # resize
     # resize
-    h,w=img.shape 
+    h,w=_img.shape 
     width= int(font_size* w/h) 
     
-    img=cv2.resize(img,(width,font_size),fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
+    _img=cv2.resize(_img,(width,font_size),fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
     return _img,label,iden
 
 
