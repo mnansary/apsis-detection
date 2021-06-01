@@ -17,6 +17,7 @@ import sys
 import numpy
 import scipy.ndimage as sni
 from pprint import pprint
+import regex
 
 #--------------------
 # Parser class
@@ -563,5 +564,187 @@ def drawsPrintTextOnTable(printTextData,
         # plt.show() 
 
     return TableImg, all_locs, labeled_img 
+
+
+def memoHeadFunc(
+                  head_names,
+                  head_var_names,
+                  class_map_csv_path,
+                  font_path,
+                  font_size=128,
+                  bangla_num=["০","১","২","৩","৪","৫","৬","৭","৮","৯"],
+                  iden=3
+
+                 ):
+
+
+    """
+          @function author:
+                
+                Create image of top part of Memo
+
+            args:
+                head_names = text values of head part which are unchanged. like 
+                              [
+                              "এ.স. এন্টারপ্রাইজ",
+                              "ড্রিস্ট্রিবিউটরঃ এম/এস হাশেম ট্রেডিং",
+                              "হাউস নাম্বারঃ ১২৩৪, বাড্ডা, গুলশান, ঢাকা।",                                <LIST>
+                              "মোবাইল নাম্বারঃ ০১৭২৩৪৫৬৭৮৯", 
+                              "নাম্বারঃ",
+                              "তারিখঃ"
+                              ]  
+
+              head_var_names = text values of head part which are included dot dot. like 
+                                  [
+                                    
+                                  "আউটলেটের নামঃ",
+                                  "রাউটঃ",                                                       <LIST>
+                                  "ঠিকানাঃ"
+                                    
+                                    ]
+
+              returns:
+                    final_img            =  Binary Image after placing text on image.
+
+    """
+
+
+    gp=GraphemeParser(class_map_csv_path)
+
+    ### Add space and dot with last two value of head_names list
+    head_names[len(head_names)-1] = head_names[len(head_names)-1]+40*(".") ## Date
+    head_names[len(head_names)-2] = head_names[len(head_names)-2]+40*(" ") # No.
+
+    ## Add dot head_var_names list
+    for i, p in enumerate(head_var_names):
+        dot_len = 70-len(p)
+        head_var_names[i] = head_var_names[i]+dot_len*(".")
+        
+    len_head_names = len(head_names)
+    len_head_var_names = len(head_var_names)
+
+    ## merge both list (head_names, head_var_names)
+    data_Text = head_names + head_var_names
+
+    ## Create Function: for Process the Text data
+    def processText(dataText,
+                    gp=gp,
+                    bangla_num=bangla_num                   ########<<<<<<======== Func: processText()
+                    ):
+      data = []
+      for i, p in enumerate(dataText):
+        _data=[]
+        rem_str=p
+        # find pure bangla words and numbers
+        words=regex.findall(r"[^\x20-\x2F\x3A-\x40\x5B-\x60\x7B-\x7E-\x7C]+",p)
+        for idx,word in enumerate(words):
+          
+          comps=[]
+          # find previous strings
+          prev_str=rem_str.partition(word)[0]
+          # get remainder string
+          rem_str="".join(list(rem_str.partition(word)[2:]))
+          
+          if prev_str.strip():
+            comps+=[c for c in prev_str]
+          # _data.append(word)   ### <<<<===
+          if any(char in bangla_num for char in word):
+            comps+=[g for g in word]
+            
+          else:
+            comps+=gp.word2grapheme(word)
+          
+          # for last word
+          if idx==len(words)-1:
+            comps+=[c for c in rem_str]
+
+          comps.append(" ")
+          _data+=comps
+
+        # print(_data)  
+        # print(len(_data))
+        data.append(_data)
+
+      return data
+
+    data = processText(data_Text) ####<<<<<====== call Func: processText()
+
+    imgs=[]
+    labels=[]
+    h_max,w_max=0,0
+    # find images and labels
+    i = 0
+    for line in data: 
+      i += 1
+      if i==1:
+        img,label,iden=createPrintedLine(iden,
+                                        line,
+                                        font_path,
+                                        200)
+      elif i==2:
+        img,label,iden=createPrintedLine(iden,
+                                        line,
+                                        font_path,
+                                        170)
+      else:
+        img,label,iden=createPrintedLine(iden,
+                                        line,
+                                        font_path,
+                                        font_size)
+      # print(iden)
+      h,w=img.shape
+      if h>h_max:
+        h_max=h
+      if w>w_max:
+        w_max=w
+
+      imgs.append(img)
+      labels.append(label)
+
+    h_max+=32
+    w_max+=32
+
+    padded=[]
+    for img in imgs:
+      img=padImg(img, h_max, w_max)
+      padded.append(img)
+      # plt.imshow(padImg(img, h_max, w_max))
+      # plt.show()
+
+    ## Merge Padded Images without last 2 values
+    img_1=np.concatenate(padded[:len(head_names)-2],axis=0)
+    (h_img_1, w_img_1) =  img_1.shape
+    # plt.imshow(img_1)
+    # plt.show() 
+
+    ## merge last 2 values 
+    img_2 = np.concatenate(padded[len(head_names)-2:len(head_names)], axis=1)
+    (h_img_2, w_img_2) =  img_2.shape
+    # plt.imshow(img_2)
+    # plt.show() 
+
+    ## Need reshape of img_2 to merge img_1 and img_2
+    h= img_2.shape[0]
+    w= img.shape[1]
+    dim = (h, w)
+    img_2_resized = cv2.resize(img_2, dim[::-1], interpolation = cv2.INTER_AREA)
+
+    ## merge img_1 and img_2_resized
+    img_3 = np.concatenate([img_1, img_2_resized], axis=0)
+    # plt.imshow(img_3)
+    # plt.show()
+
+    ## Merge head_var_names
+    im_4 = np.concatenate(padded[len(head_names):], axis=0)
+    # plt.imshow(im_4)
+    # plt.show()
+
+    ## Merge img_3 and img_4: Final imgage
+    final_img = np.concatenate([img_3, im_4], axis=0)
+    # plt.imshow(final_img)
+    # plt.show()
+
+    # return
+    return final_img
 
 
