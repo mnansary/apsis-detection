@@ -18,6 +18,10 @@ import numpy
 import scipy.ndimage as sni
 from pprint import pprint
 import regex
+import random
+
+# from coreLib.word import addSpace
+
 
 #--------------------
 # Parser class
@@ -667,6 +671,14 @@ def memoHeadFunc(
 
       return data
 
+    def addSpace(img, iden, 
+                 word_min_space=30,
+                 word_max_space=100):
+        h,_=img.shape
+        width=random.randint(word_min_space, word_max_space)
+        space=np.ones((h,width))*iden
+        return np.concatenate([img,space],axis=1)
+
     data = processText(data_Text) ####<<<<<====== call Func: processText()
 
     imgs=[]
@@ -717,6 +729,20 @@ def memoHeadFunc(
     # plt.imshow(img_1)
     # plt.show() 
 
+    no_date_iden_list = [i for i in range(655+len(head_names)-2,len(head_names)+655)]
+    iden_n_d = 0
+    # print(no_date_iden_list)
+    # print(len(head_names))
+    # print(len(padded))
+    for i in range(len(head_names)-2, len(head_names)):
+        org_img = padded[i]
+        h,w = org_img.shape
+        dim=(h,w)
+        space_img = addSpace(padded[i], no_date_iden_list[iden_n_d])
+        resize_space_img=cv2.resize(space_img, dim[::-1], fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
+        padded[i] = resize_space_img
+        iden_n_d+=1
+
     ## merge last 2 values 
     img_2 = np.concatenate(padded[len(head_names)-2:len(head_names)], axis=1)
     (h_img_2, w_img_2) =  img_2.shape
@@ -727,12 +753,30 @@ def memoHeadFunc(
     h= img_2.shape[0]
     w= img.shape[1]
     dim = (h, w)
-    img_2_resized = cv2.resize(img_2, dim[::-1], interpolation = cv2.INTER_AREA)
+    img_2_resized = cv2.resize(img_2, dim[::-1], fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
 
     ## merge img_1 and img_2_resized
     img_3 = np.concatenate([img_1, img_2_resized], axis=0)
     # plt.imshow(img_3)
     # plt.show()
+
+    #################################
+    # cv2.resize(img, dim[::-1], fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
+    head_iden_list = [i for i in range(555+len(head_names),len(padded)+555)]
+    iden_i = 0
+    # print(head_iden_list)
+    # print(len(head_names))
+    # print(len(padded))
+    for i in range(len(head_names), len(padded)):
+        org_img = padded[i]
+        h,w = org_img.shape
+        dim=(h,w)
+        space_img = addSpace(padded[i], head_iden_list[iden_i])
+        resize_space_img=cv2.resize(space_img, dim[::-1], fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
+        padded[i] = resize_space_img
+        iden_i+=1
+
+    ##################################
 
     ## Merge head_var_names
     im_4 = np.concatenate(padded[len(head_names):], axis=0)
@@ -745,6 +789,6 @@ def memoHeadFunc(
     # plt.show()
 
     # return
-    return final_img
+    return final_img, head_iden_list, no_date_iden_list
 
 
