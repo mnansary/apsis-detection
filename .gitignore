@@ -132,3 +132,5 @@ tests/*
 __modeling__/*
 models/*
 fonts/*
+.vscode/*
+debug.ipynb 
