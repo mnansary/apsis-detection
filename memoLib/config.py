@@ -39,4 +39,10 @@ class config:
     # word space
     word_min_space  =   30
     word_max_space  =   100
+
+    # height of table's box
+    height_box=200
+
+    # width of line 
+    line_width=2
     

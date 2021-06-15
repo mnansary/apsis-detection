@@ -5,11 +5,15 @@
 #----------------------------
 # imports
 #----------------------------
-import numpy as np 
-from .word import createPrintedLine, processLine
+import numpy as np
+import random
+import os
+import cv2
+from glob import glob
+from .word import createPrintedLine, processLine, addSpace, create_word
 from .config import config
 from .utils import padImg
-import random
+from .text_utils import placeImageOnBackground
 
 def memoHeadFunc(ds,head_names,head_var_names):
 
@@ -41,7 +45,11 @@ def memoHeadFunc(ds,head_names,head_var_names):
                                     ]
 
               returns:
-                    final_img            =  Binary Image after placing text on image.
+                    final_img         =  Binary Image after placing text on image. <Image>
+
+                    head_iden_list    =  List of iden numbbers for tracking where (name, route, address) want to insert hand written. <LIST>
+
+                    no_date_iden_list =  List of iden numbbers for tracking where (number and date) want to insert hand written. <LIST>
 
     """
 
@@ -54,21 +62,15 @@ def memoHeadFunc(ds,head_names,head_var_names):
     for i, p in enumerate(head_var_names):
         dot_len = config.date_no.space-len(p)
         head_var_names[i] = head_var_names[i]+dot_len*config.ext
-        
-    # len_head_names = len(head_names)
-    # len_head_var_names = len(head_var_names)
 
     ## merge both list (head_names, head_var_names)
     data_Text = head_names + head_var_names
     data = [processLine(line) for line in data_Text]
 
-    
     # stable-fixed
     iden=3
-
     imgs=[]
     labels=[]
-    
     h_max,w_max=0,0
     
     fonts=[_font for _font in  glob(os.path.join( ds.bangla.fonts,"*.ttf")) if "ANSI" not in _font]
@@ -83,7 +85,6 @@ def memoHeadFunc(ds,head_names,head_var_names):
             img,label,iden=createPrintedLine(iden,line,font_path,config.headline2_font_size)
         else:
             img,label,iden=createPrintedLine(iden,line,font_path,config.headline3_font_size)
-        
         
         # print(iden)
         h,w=img.shape
@@ -107,11 +108,9 @@ def memoHeadFunc(ds,head_names,head_var_names):
     ## Merge Padded Images without last 2 values
     img_1=np.concatenate(padded[:len(head_names)-2],axis=0)
     
+    ## add space for tracking insertion of handwritten
     no_date_iden_list = [i for i in range(655+len(head_names)-2,len(head_names)+655)]
     iden_n_d = 0
-    # print(no_date_iden_list)
-    # print(len(head_names))
-    # print(len(padded))
     for i in range(len(head_names)-2, len(head_names)):
         org_img = padded[i]
         h,w = org_img.shape
@@ -124,8 +123,6 @@ def memoHeadFunc(ds,head_names,head_var_names):
     ## merge last 2 values 
     img_2 = np.concatenate(padded[len(head_names)-2:len(head_names)], axis=1)
     (h_img_2, w_img_2) =  img_2.shape
-    # plt.imshow(img_2)
-    # plt.show() 
 
     ## Need reshape of img_2 to merge img_1 and img_2
     h= img_2.shape[0]
@@ -135,16 +132,10 @@ def memoHeadFunc(ds,head_names,head_var_names):
 
     ## merge img_1 and img_2_resized
     img_3 = np.concatenate([img_1, img_2_resized], axis=0)
-    # plt.imshow(img_3)
-    # plt.show()
 
-    #################################
-    # cv2.resize(img, dim[::-1], fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
+    ## add space for tracking insertion of handwritten
     head_iden_list = [i for i in range(555+len(head_names),len(padded)+555)]
     iden_i = 0
-    # print(head_iden_list)
-    # print(len(head_names))
-    # print(len(padded))
     for i in range(len(head_names), len(padded)):
         org_img = padded[i]
         h,w = org_img.shape
@@ -154,19 +145,64 @@ def memoHeadFunc(ds,head_names,head_var_names):
         padded[i] = resize_space_img
         iden_i+=1
 
-    ##################################
-
     ## Merge head_var_names
     im_4 = np.concatenate(padded[len(head_names):], axis=0)
-    # plt.imshow(im_4)
-    # plt.show()
 
     ## Merge img_3 and img_4: Final imgage
     final_img = np.concatenate([img_3, im_4], axis=0)
-    # plt.imshow(final_img)
-    # plt.show()
 
     # return
     return final_img, head_iden_list, no_date_iden_list
 
 
+
+def placeHandTextOnMemoHeadImage(ds, memo_head_img, iden_list_head_var_names, iden_list_no_date):
+    
+    
+    '''
+        @author
+        places a specific image on a given memo head image at a specific location
+        args:
+            memo_head_img            :   memo head image to place the image
+            iden_list_head_var_names :   list of iden values for finding location of head_var_names (name, route, address)
+            iden_list_no_date        :   list of iden values for finding location of number and date
+            ds                       :   the dataset object
+        location constraint:
+            the bounding box centering the (x,y) point can be random
+        return:
+            memo_head_img            :   placing image given memo head image at a specific location.
+    '''
+    
+    ## greyscale images to place (name, route, date)
+    imgs_head_var_names = [create_word(i,"bangla","handwritten","graphemes",ds,use_dict=True)[0] for i in range(1, len(iden_list_head_var_names)+1)]
+    for i,img in zip(iden_list_head_var_names,imgs_head_var_names):
+        idx = np.where(memo_head_img==i)
+        _,w=img.shape
+        y_min, y_max, x_min, x_max = np.min(idx[0]), np.max(idx[0]), np.min(idx[1]), np.max(idx[1])
+
+        if w<x_min: 
+            y_min, y_max, x_min, x_max=y_min, y_max, x_min-w, x_max
+        else:
+            y_min, y_max, x_min, x_max=y_min, y_max, x_min-w//2, x_max
+            
+        bbox = (y_min, y_max, x_min, x_max)
+            
+        memo_head_img=placeImageOnBackground(img,memo_head_img,bbox)
+        
+    ## greyscale images to place (number, date)
+    imgs_num_date = [create_word(i,"bangla","handwritten","number",ds,use_dict=True)[0] for i in range(1, len(iden_list_no_date)+1)]
+    for i,img in zip(iden_list_no_date,imgs_num_date):
+        idx = np.where(memo_head_img==i)
+        _,w=img.shape
+        y_min, y_max, x_min, x_max = np.min(idx[0]), np.max(idx[0]), np.min(idx[1]), np.max(idx[1])
+        
+        if w<x_min: 
+            y_min, y_max, x_min, x_max=y_min, y_max, x_min-w, x_max
+        else:
+            y_min, y_max, x_min, x_max=y_min, y_max, x_min-w//2, x_max
+            
+        bbox = (y_min, y_max, x_min, x_max)
+            
+        memo_head_img=placeImageOnBackground(img,memo_head_img,bbox)
+            
+    return memo_head_img
