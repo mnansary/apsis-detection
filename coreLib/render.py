@@ -219,3 +219,36 @@ def createSceneImage(ds,iden=3):
     # eliminate very small noises
     labels=[label for label in labels if label is not None]
     return page,labels
+
+
+#--------------------
+# process back
+#--------------------
+def createImageData(backgen,page,labels):
+    '''
+        creates a proper image to save 
+        args:
+            backgen :   background generator
+            page    :   the page image
+            labels  :   the labels of the page
+    '''
+    back=next(backgen)
+
+    for line_label in labels:
+        # random choice for color distribution
+        _colType=random.choice(["inline","different"])
+        if _colType=="inline":
+            line_col=randColor()
+        else:
+            line_col=None
+        for label in line_label:
+            # format color space
+            if line_col is None:
+                col=randColor()
+            else:
+                col=line_col
+            # place colors
+            for k,v in label.items():
+                if v!=' ':
+                    back[page==k]=col
+    return back
