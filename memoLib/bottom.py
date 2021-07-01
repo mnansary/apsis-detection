@@ -158,6 +158,7 @@ def placeSignsOnMemoBottomImage(ds, final_img, sr_iden_list):
         img_path=os.path.join(ds.common.noise.sign,"mixed_" + str(k) +".bmp")
         if os.path.exists(img_path):
             img=cv2.imread(img_path,0)
+            img=255-img
             imgss.append(img)
 
     num_to_select = len(sr_iden_list)          # set the number to select here.
