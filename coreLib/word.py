@@ -10,7 +10,6 @@ import pandas as pd
 import random
 import cv2
 import numpy as np
-import math
 import PIL
 import PIL.Image , PIL.ImageDraw , PIL.ImageFont 
 
@@ -70,8 +69,9 @@ def createHandwritenWords(iden,
         img=cv2.resize(img,(width,height),fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
         # mark image
         img=255-img
-        img[img>0]      =   iden
-        imgs.append(img)
+        data=np.zeros(img.shape)
+        data[img>0]      =   iden
+        imgs.append(data)
         # label
         label[iden] = comp 
         iden+=1
@@ -171,7 +171,8 @@ def create_word(iden,
                 data_type,
                 comp_type,
                 ds,
-                use_dict=True):
+                use_dict=True,
+                use_symbols =False):
     '''
         creates a marked word image
         args:
@@ -181,18 +182,8 @@ def create_word(iden,
             comp_type               :       grapheme/number/mixed
             ds                      :       the dataset object
             use_dict                :       use a dictionary word (if not used then random data is generated)
+            use_symbols             :       wheather to use symbol or not
     '''
-    # using symbols
-    if random.choices(population=[0,1],weights=[0.8, 0.2],k=1)[0]==1:
-        use_symbols =   True
-        sdf         =   ds.common.symbols.df
-        num_sym     =   random.randint(config.min_num_sym,config.max_mun_sym)
-        syms=[]
-        for _ in range(num_sym):
-            idx=random.randint(0,len(sdf)-1)
-            syms.append(sdf.iloc[idx,1])
-    else:
-        use_symbols =   False
         
     
     # set resources
@@ -247,6 +238,17 @@ def create_word(iden,
 
     # moderation for using symbols
     if use_symbols:
+        # using symbols
+        #if random.choices(population=[0,1],weights=[0.8, 0.2],k=1)[0]==1:
+        #use_symbols =   True
+        
+        sdf         =   ds.common.symbols.df
+        num_sym     =   random.randint(config.min_num_sym,config.max_mun_sym)
+        syms=[]
+        for _ in range(num_sym):
+            idx=random.randint(0,len(sdf)-1)
+            syms.append(sdf.iloc[idx,1])
+    
         comps+=syms
         df=pd.concat([df,sdf],ignore_index=True)
     

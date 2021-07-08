@@ -1,7 +1,7 @@
 # synthdata
 
 ```python
-Version: 0.0.3     
+Version: 0.0.4     
 Authors: Md. Nazmuddoha Ansary,
          Md. Rezwanul Haque,
          Md. Mobassir Hossain 
@@ -54,7 +54,6 @@ Gnome       : 3.28.2
             ├── graphemes
             └── numbers    
 ```
-* The path for the **sourcedata** folder is the **src_path** used in **main.py**
 * The dataset is collected and compiled from vairous sources such as:
     * The bangla **grapheme** dataset is taken from [here](https://www.kaggle.com/pestipeti/bengali-quick-eda/#data). 
         * Only the **256** folder under **256_train** is kept and renamed as **RAW** form **BengaliAI:Supplementary dataset for BengaliAI Competition**
@@ -62,3 +61,11 @@ Gnome       : 3.28.2
         * Only the **RAW_NUMS** folder is kept that contains all the images of the numbers
     
 
+# TODO
+- [] datagen:detection
+    - [] total-text
+    - [] line-text
+- [] datagen: recognition
+    - [] segOCR
+    - [] labels
+    - [] background

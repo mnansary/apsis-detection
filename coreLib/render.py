@@ -12,85 +12,9 @@ import numpy as np
 
 from glob import glob
 from tqdm import tqdm
-from coreLib.config import config
-from coreLib.word import create_word
-#--------------------
-# helpers
-#--------------------
-def padPage(img):
-    '''
-        pads a page image to proper dimensions
-    '''
-    h,w=img.shape 
-    if h>config.back_dim:
-        # resize height
-        height=config.back_dim
-        width= int(height* w/h) 
-        img=cv2.resize(img,(width,height),fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
-        # pad width
-        # mandatory check
-        h,w=img.shape 
-        # pad widths
-        left_pad_width =random.randint(0,(config.back_dim-w))
-        right_pad_width=config.back_dim-w-left_pad_width
-        # pads
-        left_pad =np.zeros((h,left_pad_width),dtype=np.int64)
-        right_pad=np.zeros((h,right_pad_width),dtype=np.int64)
-        # pad
-        img =np.concatenate([left_pad,img,right_pad],axis=1)
-    else:
-        _type=random.choice(["top","bottom","middle"])
-        if _type in ["top","bottom"]:
-            pad_height=config.back_dim-h
-            pad     =np.zeros((pad_height,config.back_dim))
-            if _type=="top":
-                img=np.concatenate([img,pad],axis=0)
-            else:
-                img=np.concatenate([pad,img],axis=0)
-        else:
-            # pad heights
-            top_pad_height =(config.back_dim-h)//2
-            bot_pad_height=config.back_dim-h-top_pad_height
-            # pads
-            top_pad =np.zeros((top_pad_height,w),dtype=np.int64)
-            bot_pad=np.zeros((bot_pad_height,w),dtype=np.int64)
-            # pad
-            img =np.concatenate([top_pad,img,bot_pad],axis=0)
-    # for error avoidance
-    img=cv2.resize(img,(config.back_dim,config.back_dim),fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
-    return img
-
-
-def processLine(img):
-    '''
-        fixes a line image 
-        args:
-            img        :  concatenated line images
-    '''
-    h,w=img.shape 
-    if w>config.back_dim:
-        width=config.back_dim-random.randint(0,config.back_margin)
-        # resize
-        height= int(width* h/w) 
-        img=cv2.resize(img,(width,height),fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
-    # mandatory check
-    h,w=img.shape 
-    # pad widths
-    left_pad_width =random.randint(0,(config.back_dim-w))
-    right_pad_width=config.back_dim-w-left_pad_width
-    # pads
-    left_pad =np.zeros((h,left_pad_width),dtype=np.int64)
-    right_pad=np.zeros((h,right_pad_width),dtype=np.int64)
-    # pad
-    img =np.concatenate([left_pad,img,right_pad],axis=1)
-    return img 
-
-def randColor():
-    '''
-        generates random color
-    '''
-    return (random.randint(0,255),random.randint(0,255),random.randint(0,255))
-
+from .config import config
+from .word import create_word
+from .utils import processLine,padPage,randColor 
 #------------------------
 # background
 #------------------------
@@ -137,7 +61,7 @@ def backgroundGenerator(ds,dim=(1024,1024)):
             yield img
 
 #--------------------
-# main
+# page
 #--------------------
 def createSceneImage(ds,iden=3):
     '''
@@ -175,54 +99,23 @@ def createSceneImage(ds,iden=3):
         page_parts.append(line_img)
         labels.append(line_labels)
     
-    
-    '''
-        single entry to ensure non-zero image
-    '''
-    
-    # Explicit Entry
-    line_parts=[]
-    line_labels=[]
-    img,label,iden=create_word(iden=iden,
-                    source_type="bangla",
-                    data_type=random.choice(["handwritten","printed"]),
-                    comp_type=random.choice(["number","grapheme"]),
-                    ds=ds,
-                    use_dict=random.choice([True,False]),
-                    )
-    line_labels.append(label)
-    
-
-    line_img=processLine(img)
-    # the page lines
-    page_parts.append(line_img)
-    labels.append(line_labels)
-    
-    '''
-        single entry to ensure non-zero image
-    '''
-    
-    
     paded_parts=[]
     for lidx,line_img in enumerate(page_parts):
-        if line_img.shape[0]>=config.min_line_height:
-            # pad lines 
-            pad_height=random.randint(config.vert_min_space,config.vert_max_space)
-            pad     =np.zeros((pad_height,config.back_dim))
-            line_img=np.concatenate([line_img,pad],axis=0)
-            paded_parts.append(line_img)
-        else:
-            labels[lidx]=None
+        # pad lines 
+        pad_height=random.randint(config.vert_min_space,config.vert_max_space)
+        pad     =np.zeros((pad_height,config.back_dim))
+        line_img=np.concatenate([line_img,pad],axis=0)
+        paded_parts.append(line_img)
+
     # page img
     page=np.concatenate(paded_parts,axis=0)
     page=padPage(page)
-    # eliminate very small noises
-    labels=[label for label in labels if label is not None]
+    
     return page,labels
 
 
 #--------------------
-# process back
+# data
 #--------------------
 def createImageData(backgen,page,labels):
     '''

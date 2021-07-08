@@ -1,18 +1,17 @@
 # -*-coding: utf-8 -
 '''
-    @author: MD. Nazmuddoha Ansary
+    @author: MD. Nazmuddoha Ansary,MD. Rezwanul Haque
 '''
 #--------------------
 # imports
 #--------------------
 import cv2
 import numpy as np
-
 #--------------------
 # format
 #--------------------
 
-def convertToTotalText(page,labels):
+def TotalText(page,labels):
     '''
         **_label_mask:polygon
         ** text_lines[0]=
@@ -93,3 +92,91 @@ def convertToTotalText(page,labels):
     word_mask=word_mask.astype("uint8")
     
     return char_mask,word_mask,text_lines
+
+
+#--------------------
+# linetext-format
+#--------------------
+def lineText(page,labels,heatmap):
+    '''
+        @author
+        args:
+            page   :     marked image of a page given at letter by letter 
+            labels :     list of markings for each word
+        returns:
+            line text format outputs
+         
+    '''
+    # source bbobx of heatmap
+    src = np.array([[0, 0], 
+                    [heatmap.shape[1], 0], 
+                    [heatmap.shape[1], heatmap.shape[0]],
+                    [0, heatmap.shape[0]]]).astype('float32')
+
+    # word_mask
+    word_mask=np.zeros(page.shape)
+    # char mask
+    char_mask=np.zeros(page.shape)
+    for line_labels in labels:
+        
+        for label in line_labels:
+            _ymins=[]
+            _ymaxs=[]
+            _xmins=[]
+            _xmaxs=[] 
+
+            for k,v in label.items():
+                if v!=' ':
+                    char_mask[page==k]=255
+                    idx = np.where(page==k)
+                    
+                    y_min,y_max,x_min,x_max = np.min(idx[0]), np.max(idx[0]), np.min(idx[1]), np.max(idx[1])
+                    _ymins.append(y_min)
+                    _ymaxs.append(y_max)
+                    _xmins.append(x_min)
+                    _xmaxs.append(x_max)            
+            
+                    x1=x_min
+                    y1=y_max
+                    x2=x_max
+                    y2=y_max
+                    x3=x_max
+                    y3=y_min
+                    x4=x_min
+                    y4=y_min
+                    _points = np.array([[x1, y1], 
+                                        [x2, y2], 
+                                        [x3, y3], 
+                                        [x4, y4]]).astype('float32') 
+                    # transforms the bbox and creates the heatmap
+                    M = cv2.getPerspectiveTransform(src=src,dst=_points)
+                    word_mask+= cv2.warpPerspective(heatmap,
+                                                    M, 
+                                                    dsize=(word_mask.shape[1],
+                                                           word_mask.shape[0])).astype('float32')
+
+        x_min=min(_xmins)
+        x_max=max(_xmaxs)
+        y_min=min(_ymins)
+        y_max=max(_ymaxs)
+
+        x1=x_min
+        y1=y_max
+        x2=x_max
+        y2=y_max
+        x3=x_max
+        y3=y_min
+        x4=x_min
+        y4=y_min
+        word_points = np.array([[x1, y1], [x2, y2], [x3, y3], [x4, y4]]).astype('float32') 
+        # transforms the bbox and creates the heatmap
+        M = cv2.getPerspectiveTransform(src=src,dst=word_points)
+        word_mask+= cv2.warpPerspective(heatmap,
+                                        M, 
+                                        dsize=(word_mask.shape[1],
+                                               word_mask.shape[0])).astype('float32')
+
+    
+    char_mask=char_mask.astype("uint8")
+    word_mask=word_mask.astype("uint8")
+    return char_mask,word_mask
