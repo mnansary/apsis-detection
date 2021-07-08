@@ -78,8 +78,8 @@ def padPage(img):
         left_pad_width =random.randint(0,(config.back_dim-w))
         right_pad_width=config.back_dim-w-left_pad_width
         # pads
-        left_pad =np.zeros((h,left_pad_width),dtype=np.int64)
-        right_pad=np.zeros((h,right_pad_width),dtype=np.int64)
+        left_pad =np.zeros((h,left_pad_width))
+        right_pad=np.zeros((h,right_pad_width))
         # pad
         img =np.concatenate([left_pad,img,right_pad],axis=1)
     else:
@@ -96,8 +96,8 @@ def padPage(img):
             top_pad_height =(config.back_dim-h)//2
             bot_pad_height=config.back_dim-h-top_pad_height
             # pads
-            top_pad =np.zeros((top_pad_height,w),dtype=np.int64)
-            bot_pad=np.zeros((bot_pad_height,w),dtype=np.int64)
+            top_pad =np.zeros((top_pad_height,w))
+            bot_pad=np.zeros((bot_pad_height,w))
             # pad
             img =np.concatenate([top_pad,img,bot_pad],axis=0)
     # for error avoidance
@@ -113,7 +113,7 @@ def processLine(img):
     '''
     h,w=img.shape 
     if w>config.back_dim:
-        width=config.back_dim-random.randint(0,config.back_margin)
+        width=config.back_dim-random.randint(0,300)
         # resize
         height= int(width* h/w) 
         img=cv2.resize(img,(width,height),fx=0,fy=0, interpolation = cv2.INTER_NEAREST)

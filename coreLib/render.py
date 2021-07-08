@@ -81,13 +81,12 @@ def createSceneImage(ds,iden=3):
         # select number of words
         num_words=random.randint(config.min_num_words,config.max_num_words)
         for _ in range(num_words):
-            img,label,iden=create_word(iden=iden,
-                            source_type="bangla",
-                            data_type=random.choice(["handwritten","printed"]),
-                            comp_type=random.choice(["number","grapheme"]),
-                            ds=ds,
-                            use_dict=random.choice([True,False]),
-                            )
+            img,label,iden=create_word( iden=iden,
+                                        ds=ds,
+                                        source_type=random.choice(config.data.sources),
+                                        data_type=random.choice(config.data.formats),
+                                        comp_type=random.choice(config.data.components), 
+                                        use_dict=random.choice([True,False]))
             line_labels.append(label)
             line_parts.append(img)
 

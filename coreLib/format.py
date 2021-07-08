@@ -49,8 +49,8 @@ def TotalText(page,labels):
             
             for k,v in label.items():
                 if v!=' ':
+
                     char_mask[page==k]=255
-                    
                     transcriptions+=v
                     idx = np.where(page==k)
                     
@@ -60,7 +60,6 @@ def TotalText(page,labels):
                     _xmins.append(x_min)
                     _xmaxs.append(x_max)            
                     
-            
             
             _label_mask[min(_ymins):max(_ymaxs)+1,min(_xmins):max(_xmaxs)+1]=255
             word_mask[min(_ymins):max(_ymaxs)+1,min(_xmins):max(_xmaxs)+1]=255
@@ -136,6 +135,7 @@ def lineText(page,labels,heatmap):
                     idx = np.where(page==k)
                     
                     y_min,y_max,x_min,x_max = np.min(idx[0]), np.max(idx[0]), np.min(idx[1]), np.max(idx[1])
+                    
                     _ymins.append(y_min)
                     _ymaxs.append(y_max)
                     _xmins.append(x_min)
@@ -161,27 +161,27 @@ def lineText(page,labels,heatmap):
                                                            heat_mask.shape[0])).astype('float32')
 
         
-        # word mask
-        x_min=min(_xmins)
-        x_max=max(_xmaxs)
-        y_min=min(_ymins)
-        y_max=max(_ymaxs)
+            # word mask
+            x_min=min(_xmins)
+            x_max=max(_xmaxs)
+            y_min=min(_ymins)
+            y_max=max(_ymaxs)
 
-        x1=x_min
-        y1=y_max
-        x2=x_max
-        y2=y_max
-        x3=x_max
-        y3=y_min
-        x4=x_min
-        y4=y_min
-        word_points = np.array([[x1, y1], [x2, y2], [x3, y3], [x4, y4]]).astype('float32') 
-        # transforms the bbox and creates the heatmap
-        M = cv2.getPerspectiveTransform(src=src,dst=word_points)
-        word_mask+= cv2.warpPerspective(heatmap,
-                                        M, 
-                                        dsize=(word_mask.shape[1],
-                                               word_mask.shape[0])).astype('float32')
+            x1=x_min
+            y1=y_max
+            x2=x_max
+            y2=y_max
+            x3=x_max
+            y3=y_min
+            x4=x_min
+            y4=y_min
+            word_points = np.array([[x1, y1], [x2, y2], [x3, y3], [x4, y4]]).astype('float32') 
+            # transforms the bbox and creates the heatmap
+            M = cv2.getPerspectiveTransform(src=src,dst=word_points)
+            word_mask+= cv2.warpPerspective(heatmap,
+                                            M, 
+                                            dsize=(word_mask.shape[1],
+                                                word_mask.shape[0])).astype('float32')
 
     
     char_mask=char_mask.astype("uint8")

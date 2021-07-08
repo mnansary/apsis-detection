@@ -6,7 +6,7 @@
 class config:
     # number of lines per image
     min_num_lines   =   1
-    max_num_lines   =   40
+    max_num_lines   =   10
     # number of words per line
     min_num_words   =   1
     max_num_words   =   10
@@ -18,9 +18,7 @@ class config:
     max_num_len     =   10
     # comp dimension
     comp_dim        =   64
-    # symbol
-    min_num_sym     =   1
-    max_mun_sym     =   5
+    
     # word space
     word_min_space  =   50
     word_max_space  =   100
@@ -31,3 +29,8 @@ class config:
     back_dim        =   1024
     
     heatmap_ratio   =  2
+
+    class data:
+        sources     =   ["bangla","english"]
+        formats     =   ["handwritten","printed"]
+        components  =   ["number","grapheme","mixed"]

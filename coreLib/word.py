@@ -171,8 +171,7 @@ def create_word(iden,
                 data_type,
                 comp_type,
                 ds,
-                use_dict=True,
-                use_symbols =False):
+                use_dict=True):
     '''
         creates a marked word image
         args:
@@ -182,7 +181,6 @@ def create_word(iden,
             comp_type               :       grapheme/number/mixed
             ds                      :       the dataset object
             use_dict                :       use a dictionary word (if not used then random data is generated)
-            use_symbols             :       wheather to use symbol or not
     '''
         
     
@@ -226,8 +224,8 @@ def create_word(iden,
             idx=random.randint(0,len(n_df)-1)
             comps.append(n_df.iloc[idx,1])
         df=n_df
+    
     else:
-        use_symbols=False
         sdf         =   ds.common.symbols.df
         df=pd.concat([g_df,n_df,sdf],ignore_index=True)
         comps=[]
@@ -236,21 +234,6 @@ def create_word(iden,
             idx=random.randint(0,len(df)-1)
             comps.append(df.iloc[idx,1])
 
-    # moderation for using symbols
-    if use_symbols:
-        # using symbols
-        #if random.choices(population=[0,1],weights=[0.8, 0.2],k=1)[0]==1:
-        #use_symbols =   True
-        
-        sdf         =   ds.common.symbols.df
-        num_sym     =   random.randint(config.min_num_sym,config.max_mun_sym)
-        syms=[]
-        for _ in range(num_sym):
-            idx=random.randint(0,len(sdf)-1)
-            syms.append(sdf.iloc[idx,1])
-    
-        comps+=syms
-        df=pd.concat([df,sdf],ignore_index=True)
     
     # process data
     if data_type=="handwritten":
