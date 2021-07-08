@@ -104,7 +104,7 @@ def lineText(page,labels,heatmap):
             page   :     marked image of a page given at letter by letter 
             labels :     list of markings for each word
         returns:
-            line text format outputs
+            charmap,wordmap,heatmap
          
     '''
     # source bbobx of heatmap
@@ -117,6 +117,10 @@ def lineText(page,labels,heatmap):
     word_mask=np.zeros(page.shape)
     # char mask
     char_mask=np.zeros(page.shape)
+    # heat mask
+    heat_mask=np.zeros(page.shape)
+    
+    
     for line_labels in labels:
         
         for label in line_labels:
@@ -127,6 +131,7 @@ def lineText(page,labels,heatmap):
 
             for k,v in label.items():
                 if v!=' ':
+                    # char mask
                     char_mask[page==k]=255
                     idx = np.where(page==k)
                     
@@ -135,7 +140,7 @@ def lineText(page,labels,heatmap):
                     _ymaxs.append(y_max)
                     _xmins.append(x_min)
                     _xmaxs.append(x_max)            
-            
+                    # heat mask    
                     x1=x_min
                     y1=y_max
                     x2=x_max
@@ -150,11 +155,13 @@ def lineText(page,labels,heatmap):
                                         [x4, y4]]).astype('float32') 
                     # transforms the bbox and creates the heatmap
                     M = cv2.getPerspectiveTransform(src=src,dst=_points)
-                    word_mask+= cv2.warpPerspective(heatmap,
+                    heat_mask+= cv2.warpPerspective(heatmap,
                                                     M, 
-                                                    dsize=(word_mask.shape[1],
-                                                           word_mask.shape[0])).astype('float32')
+                                                    dsize=(heat_mask.shape[1],
+                                                           heat_mask.shape[0])).astype('float32')
 
+        
+        # word mask
         x_min=min(_xmins)
         x_max=max(_xmaxs)
         y_min=min(_ymins)
@@ -179,4 +186,5 @@ def lineText(page,labels,heatmap):
     
     char_mask=char_mask.astype("uint8")
     word_mask=word_mask.astype("uint8")
-    return char_mask,word_mask
+    heat_mask=heat_mask.astype("uint8")
+    return char_mask,word_mask,heat_mask
