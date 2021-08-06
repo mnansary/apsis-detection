@@ -110,6 +110,8 @@ class DataSet(object):
         self.__checkDataValidity(self.common.noise.sign,"common.noise.sign",check_dir_only=True)
         
         
+        # graphemes
+        self.bangla_graphemes=sorted(list(self.bangla.graphemes.df.label.unique()))
         
         
         
