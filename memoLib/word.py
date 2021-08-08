@@ -15,119 +15,87 @@ import random
 import pandas as pd 
 
 # from .config import config
-# from .utils import stripPads, padImg
+from .utils import stripPads
 
 #-----------------------------------
 # line image
 #----------------------------------
-def handleExtensions(img,ext,ext_len,iden,font):
-    '''
-        creates/ adds extensions to lines
-        arg:
-            img     : final staged marked image
-            ext     : extension to add
-            ext_len : length of extension
-            iden    : marking end value 
-            font    : the image font
-    '''
-    # draw
-    image = PIL.Image.new(mode='L', size=font.getsize(ext))
-    draw = PIL.ImageDraw.Draw(image)
-    draw.text(xy=(0, 0), text=ext, fill=iden, font=font)
-    
-    ext_img=[np.array(image) for _ in range(ext_len)]
-    ext_img=np.concatenate(ext_img,axis=1)
-    # reshape
-    H,W=img.shape
-
-    h,w=ext_img.shape
-    width= int(H* w/h) 
-    ext_img=cv2.resize(ext_img,(width,H),fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
-    
-    return np.concatenate([img,ext_img],axis=1)    
-
-def createPrintedLine(iden,comps,font_path,font_size,ext=None,ext_len=0):
+def createPrintedLine(iden,words,font,font_size):
     '''
         creates printed word image
         args:
             iden            :       identifier marking value starting
-            linecomps       :       the list of components
-            font_path       :       the desired font path 
-            font_size       :       the size of the font
-            ext             :       the specific extension
-            ext_len         :       length of the extention     
+            words           :       the list of components
+            font            :       the desired font
+            font_size       :       the desized size        
         returns:
             img     :       marked word image
-            label   :       dictionary of label {iden:label}
+            labels  :       dictionary of label {iden:label}
             iden    :       the final identifier
     '''
-    label={}
-    font=PIL.ImageFont.truetype(font_path, size=font_size)
-    
-    # max dim
-    min_offset=100
-    
-    comps=[comp for comp in comps if comp is not None]
-    
-    max_dim=len(comps)*font_size+min_offset
-    
-    # reconfigure comps
-    mods=['ঁ', 'ং', 'ঃ']
-    for idx,comp in enumerate(comps):
-        if idx < len(comps)-1 and comps[idx+1] in mods:
-            comps[idx]+=comps[idx+1]
-            comps[idx+1]=None 
+    labels=[]
+    word_imgs=[]
+    for idx,comps in enumerate(words):
+        # for word
+        label={}
+        # components
+        comps=[comp for comp in comps if comp is not None]
+        # max render image
+        min_offset=100
+        max_dim=len(comps)*font_size+min_offset
+        
+        # reconfigure comps
+        mods=['ঁ', 'ং', 'ঃ']
+        for idx,comp in enumerate(comps):
+            if idx < len(comps)-1 and comps[idx+1] in mods:
+                comps[idx]+=comps[idx+1]
+                comps[idx+1]=None 
+                
+        comps=[comp for comp in comps if comp is not None]
+        # construct labels
+        imgs=[]
+        comp_str=''
+        for comp in comps:
+            if comp==' ':
+                comp_str+="#"
+            comp_str+=comp    
+            # draw
+            image = PIL.Image.new(mode='L', size=(max_dim,max_dim))
+            draw = PIL.ImageDraw.Draw(image)
+            draw.text(xy=(0, 0), text=comp_str, fill=1, font=font)
+            imgs.append(np.array(image))
+            # label
+            if comp==" ":
+                comp="space"
+            label[iden] = comp 
+            iden+=1
             
-    comps=[comp for comp in comps if comp is not None]
-    # construct labels
-    
-    imgs=[]
-    comp_str=''
-    
-    for comp in comps:
-        if comp==" ":
-            comp_str+="#"
-        comp_str+=comp    
-        # draw
-        image = PIL.Image.new(mode='L', size=(max_dim,max_dim))
-        draw = PIL.ImageDraw.Draw(image)
-        draw.text(xy=(0, 0), text=comp_str, fill=1, font=font)
-        imgs.append(np.array(image))
-        # handle label
-        if comp==" ":
-            comp="space"
-        # label
-        label[iden] = comp 
-        iden+=1
         
+        # add images
+        img=sum(imgs)
+        img=stripPads(img,0)
+        # idx=np.where(img>0)
+        # y_min,y_max,x_min,x_max = np.min(idx[0]), np.max(idx[0]), np.min(idx[1]), np.max(idx[1])
+        # img=img[y_min:y_max,x_min:x_max]
         
-    # add images
-    img=sum(imgs)
-    idx=np.where(img>0)
-    y_min,y_max,x_min,x_max = np.min(idx[0]), np.max(idx[0]), np.min(idx[1]), np.max(idx[1])
-    img=img[y_min:y_max,x_min:x_max]
-    
-    # offset
-    vals=list(np.unique(img))
-    vals=sorted(vals,reverse=True)
-    vals=vals[:-1]
-    # set values
-    _img=np.zeros(img.shape)
-    for v,l in zip(vals,label.keys()):
-        _img[img==v]=l
-    # resize
-    h,w=_img.shape 
-    width= int(font_size* w/h) 
-    img=cv2.resize(_img,(width,font_size),fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
-    
-
-    # handle extensions
-    if ext is not None:
-        img=handleExtensions(img,ext,ext_len,iden,font)
-        # label
-        label[iden] = "ext"
-        iden+=1
-    return img,label,iden
+        # offset
+        vals=list(np.unique(img))
+        vals=sorted(vals,reverse=True)
+        vals=vals[:-1]
+        # set values
+        _img=np.zeros(img.shape)
+        for v,l in zip(vals,label.keys()):
+            _img[img==v]=l
+        # resize
+        h,w=_img.shape 
+        width= int(font_size* w/h) 
+        img=cv2.resize(_img,(width,font_size),fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
+        # images and labels
+        word_imgs.append(img)
+        labels.append(label)
+    # add words
+    img=np.concatenate(word_imgs,axis=1)    
+    return img,labels,iden
 
 
 

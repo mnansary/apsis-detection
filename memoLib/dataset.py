@@ -44,9 +44,6 @@ class DataSet(object):
 
             mods=['ঁ', 'ং', 'ঃ']
 
-            top_exts               =   ['ই', 'ঈ', 'উ', 'ঊ', 'ঐ','ঔ','ট', 'ঠ',' ি', 'ী', 'ৈ', 'ৌ','ঁ','র্']
-
-            bot_exts               =  ['ু', 'ূ', 'ৃ',]
             
             sel_puntcs             =   [',', '-', '.', '/', ':','(', ')']
 
@@ -89,11 +86,11 @@ class DataSet(object):
         # get dfs
         self.bangla.graphemes.df=self.__getDataFrame(self.bangla.graphemes)
         self.bangla.numbers.df  =self.__getDataFrame(self.bangla.numbers)
-        self.bangla.dictionary  =self.__getDataFrame(self.bangla.dict_csv,is_dict=True)
+        #self.bangla.dictionary  =self.__getDataFrame(self.bangla.dict_csv,is_dict=True)
 
         self.english.graphemes.df=self.__getDataFrame(self.english.graphemes)
         self.english.numbers.df  =self.__getDataFrame(self.english.numbers,int_label=True)
-        self.english.dictionary  =self.__getDataFrame(self.english.dict_csv,is_dict=True)
+        #self.english.dictionary  =self.__getDataFrame(self.english.dict_csv,is_dict=True)
         
         self.common.symbols.df   =self.__getDataFrame(self.common.symbols)
         # data validity

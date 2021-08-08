@@ -10,22 +10,29 @@ import string
 #--------------------
 # base classes
 #--------------------
+class PAD:
+    no_pad_dim      =   64
+    single_pad_dim  =   84
+    double_pad_dim  =   104
+    top             =  ['ই', 'ঈ', 'উ', 'ঊ', 'ঐ','ঔ','ট', 'ঠ',' ি', 'ী', 'ৈ', 'ৌ','ঁ','র্']
+    bot             =  ['ু', 'ূ', 'ৃ',]
+            
 class LineSection:
-    word_len_max =   10
+    word_len_max =   7
     word_len_min =   1
     num_word_max =   5
     num_word_min =   2
     symbols      =   [".","-","/",",","।","(",")"]
     vocabs       =   ["mixed","number","grapheme"]
-    max_syms     =   3
-    font_sizes_big   =   [128,96,64]
+    max_syms     =   1
+    font_sizes_big   =   [64,48]
     font_sizes_mid   =   [32,28,24]
                                        
 
 class LineWithExtension(LineSection):
     num_word_max =   2
     ext_types    =   ["single","double"]
-    ext_symbols  =   [" ",".","_"]
+    ext_symbols  =   [".","_"]
 
 #--------------------
 # format classes
@@ -33,22 +40,21 @@ class LineWithExtension(LineSection):
 
 class Head:
     min_line_section    =3
-    max_line_section    =10
+    max_line_section    =5
     min_single_exts     =2
     max_single_exts     =5
     min_double_exts     =1
     max_double_exts     =3
-    max_data_len        =100
 
-    line_sections       =[]   # {"comps":,"font_size:,inverted:"}
-    single_exts         =[]   # {"comps":,"font_size:,"ext","ext_len"}
-    double_exts         =[]   # {"c1","c2",font_size,"ext","l1","l2"}
+    line_sections       =[]   # [{words,font_size}]
+    single_exts         =[]   # [{words,font_size,ext,ext_len}]
+    double_exts         =[]   # [{words,font_size,ext,ext_len},{words,font_size,ext,ext_len}]
 
     
 #--------------------
 # text-functions
 #--------------------
-def rand_word(vocab,symbol,max_len,min_len):
+def rand_word(vocab,symbol,max_len,min_len,add_space=True):
     '''
         creates a random word
         args:
@@ -63,7 +69,8 @@ def rand_word(vocab,symbol,max_len,min_len):
         comps.append(random.choice(vocab))
     if symbol is not None:
         comps.append(symbol)
-    comps.append(" ")
+    if add_space:
+        comps.append(" ")
     return comps
 
 
@@ -76,9 +83,10 @@ def rand_line_section(section,graphemes,numbers):
     max_sym  =random.randint(0,section.max_syms)
     num_word=random.randint(section.num_word_min,section.num_word_max)
     for i in range(num_word):
-        if random.choice(section.vocabs)=="mixed":
+        _vocab=random.choices(population=section.vocabs,weights=[0.1,0.1,0.8],k=1)[0]
+        if _vocab=="mixed":
             vocab=graphemes+numbers
-        elif random.choice(section.vocabs)=="word":
+        elif _vocab=="grapheme":
             vocab=graphemes
         else:
             vocab=numbers
@@ -90,29 +98,24 @@ def rand_line_section(section,graphemes,numbers):
                 symbol=None
         else:
             symbol=None
-        line+=rand_word(vocab,
-                        symbol,
-                        section.word_len_max,
-                        section.word_len_min)
+        
+        word=rand_word(vocab,symbol,section.word_len_max,section.word_len_min)
+        line.append(word)
     return line 
 
 
-def rand_line_extension(section,graphemes,numbers,max_data,ext_type):
+def rand_line_extension(section,graphemes,numbers,ext_type):
     '''
         creates a random line with given properties and sections
     '''
-    _ext     =random.choice(section.ext_symbols)
     # single or double
     if ext_type=="single":
         line=rand_line_section(section,graphemes,numbers)
-        ext_len=max_data-len(line)
-        return line,_ext,ext_len
+        return line
     else:
         line1=rand_line_section(section,graphemes,numbers)
-        ext_len1=max_data//2-len(line1)
         line2=rand_line_section(section,graphemes,numbers)
-        ext_len2=max_data//2-len(line2)
-        return line1,line2,_ext,ext_len1,ext_len2
+        return line1,line2
 #--------------------
 # memo-functions
 #--------------------
@@ -131,27 +134,26 @@ def rand_head(graphemes,numbers,head,line_section,line_ext):
     # add line sections
     num_line_sections=random.randint(head.min_line_section,head.max_line_section)
     for _ in range(num_line_sections):
-        head.line_sections.append({"comps":rand_line_section(line_section,graphemes,numbers),
-                                   "font_size":random.choice(line_section.font_sizes_big),
-                                   "inverted":random.choices(population=[True,False],weights=[0.2, 0.8],k=1)[0]})
+        head.line_sections.append([{"words":rand_line_section(line_section,graphemes,numbers),
+                                   "font_size":random.choice(line_section.font_sizes_big)}])
     
     
     # add double ext sections
     num_double_sections=random.randint(head.min_double_exts,head.max_double_exts)
     for _ in range(num_double_sections):
-        c1,c2,ext,l1,l2=rand_line_extension(line_ext,graphemes,numbers,head.max_data_len,"double")
-        _dict={"c1":c1,"c2":c2,"l1":l1,"l2":l2,"ext":ext}
-        _dict["font_size"]=random.choice(line_ext.font_sizes_mid)
-        head.double_exts.append(_dict)
+        line1,line2=rand_line_extension(line_ext,graphemes,numbers,"double")
+        font_size=random.choice(line_ext.font_sizes_mid)
+        data=[{"words":line1,"font_size":font_size},
+              {"words":line2,"font_size":font_size}]
+
+        head.double_exts.append(data)
     
 
     # add single ext sections
     num_double_sections=random.randint(head.min_single_exts,head.max_single_exts)
     for _ in range(num_double_sections):
-        line,_ext,ext_len=rand_line_extension(line_ext,graphemes,numbers,head.max_data_len,"single")
-        _dict={"c":line,"l":ext_len,"ext":ext}
-        _dict["font_size"]=random.choice(line_ext.font_sizes_mid)
-        head.single_exts.append(_dict)
-    
-        
+        line=rand_line_extension(line_ext,graphemes,numbers,"single")
+        data={"words":line}
+        data["font_size"]=random.choice(line_ext.font_sizes_mid)
+        head.single_exts.append([data])
     return head
