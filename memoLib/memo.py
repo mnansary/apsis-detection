@@ -19,13 +19,13 @@ class LineSection:
     vocabs       =   ["mixed","number","grapheme"]
     max_syms     =   3
     font_sizes_big   =   [128,96,64]
-    font_sizes_mid   =   [64,32,16]
+    font_sizes_mid   =   [32,28,24]
                                        
 
 class LineWithExtension(LineSection):
     num_word_max =   2
     ext_types    =   ["single","double"]
-    ext_symbols  =   ["#",".","_"]
+    ext_symbols  =   [" ",".","_"]
 
 #--------------------
 # format classes

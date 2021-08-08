@@ -6,20 +6,13 @@
 # imports
 #----------------------------
 import numpy as np 
-import cv2 
-import random
-from glob import glob
-import os
 import scipy.ndimage as sni
-from .word import createPrintedLine, processLine,imgsLabels, create_word
-from .config import config
-from .utils import padImg,rotate_image
-
+import cv2
 #----------------------------
 # table function
 #----------------------------
 def createTable(num_rows, num_columns, line_width, cell_widths, cell_height):
-
+    
     '''
         @function author:
         
@@ -49,9 +42,10 @@ def createTable(num_rows, num_columns, line_width, cell_widths, cell_height):
             cell_height =   the height of a single cell                         : type <int>
             
         returns:
-            table_mask  =   the binary mask
-            (MUST BE IN BINARY ,SINCE WE WILL BE PLACING MARKED TEXTS WITHIN THE CELL)
-        
+            table_mask 
+            
+
+            
         algorithm (simplified):
             * for number of rows+1 , 
                 draw lines (having the line width) 
@@ -83,9 +77,6 @@ def createTable(num_rows, num_columns, line_width, cell_widths, cell_height):
     
     # calculate x,y for rows and columns
     #...........................complete the rest of it............................
-    ## check how to draw cv.line with grayscale values 
-    ## keep in mind that the (x1,y1) and (x2,y2) must account for line width 
-    ## comment each major step for every sub-step
 
     ## white background
     table_mask = np.full(table_mask.shape, 255, dtype=np.uint8)  # white: 255, black: 0
@@ -125,11 +116,11 @@ def createTable(num_rows, num_columns, line_width, cell_widths, cell_height):
     for val in h_xy:
         [x1_, y1_, x2_, y2_] = val 
         cv2.line(table_mask, (x1_,y1_), (x2_, y2_), 0,  line_width )
-
+    
     return table_mask
 
 
-def selectPrintTextRegions(mask, cell_widths): 
+def tableTextRegions(mask, cell_widths): 
     '''
           @function author:
           
@@ -146,7 +137,6 @@ def selectPrintTextRegions(mask, cell_widths):
               slt_brand   =    select label regions of Brand raws : type <LIST>
               slt_total   =    select label regions of Total : type <int>  
               slt_others  =    select label regions of other columns name i.e., Quality, Rate, Taka : type <LIST>
-              final_list  =    merge of all lists (slt_serial + slt_brand + [slt_total] + slt_others) : type <LIST>
               label_img   =    an integer 'ndarray' where each unique feature in input has a unique label in the returned array.
           
           tools:
@@ -185,220 +175,5 @@ def selectPrintTextRegions(mask, cell_widths):
 
     # store unique value for other columns
     slt_others = list(range(3,len_cell_widths+1))
-
-    # merge of all lists
-    final_list = slt_serial + slt_brand + slt_others + [slt_total]
-
-    return slt_serial, slt_brand, slt_total, slt_others, final_list,label_img
-
-
-def drawsPrintTextOnTable(ds, printTextData, total):
-
-    """
-          @function author:
-          
-          Place Print Bangla text on specific loactions of Binary Image.
-
-          args:
-              ds              =    dataset object that holds all the paths and resources
-
-              printTextData   =    format of example dictionary: dict_ = {'serial': ["সেরিঃ",  
-                                                                                    "১",
-                                                                                    "২",
-                                                                                    "৩", 
-                                                                                    "৪", 
-                                                                                    "৫" ],
-                                                                        'brand': ["ব্র্যান্ডের নাম", 
-                                                                                    "র‍্যান্ডম প্রোডাক্ট নাম্বার ১",      : type <DICT>
-                                                                                    "র‍্যান্ডম বিড়ি",
-                                                                                    "আরো কিছু",
-                                                                                    "৪২০ মার্কা বিড়ি",
-                                                                                    "রং নাম্বার"],
-                                                                        'quantity': ["কোয়ান্টিটি"],
-                                                                        'rate': ["রেইট/গ্রোস"], 
-                                                                        'taka': ["টাকা"]
-                                                                        
-                                                                      } 
-                                    keys of the dictioary mention columns's name ("সেরিঃ","ব্র্যান্ডের নাম", "কোয়ান্টিটি", "রেইট/গ্রোস", "টাকা").
-                                    Others are serials and products name. 
-
-              total               =  text of total box (N.B., you can insert no value (None)). (example:total = ["টোটাল"])  : type <LIST>  
-
-              
-              
-          returns:
-              TableImg            =  Binary Image after placing text on desired locations.
-              all_locs            =  Location of printed text on image 
-              labeled_img         =  an integer 'ndarray' where each unique feature in input has a unique label in the returned array.
-          
-
-    """
-
-    ## choose fond
-    fonts=[_font for _font in  glob(os.path.join( ds.bangla.fonts,"*.ttf")) if "ANSI" not in _font]
-    font_path=random.choice(fonts)
-    iden = 3
-
-    ### ===== Process printTextData =========== ###
-    printTextDataProcess = {}
-
-    ### Process Sl, Brand, Quantity, Rate, Taka Columns
-    for key, data_text in printTextData.items():
-        data = [processLine(line) for line in data_text] #processText(data_text)                        ######## <<<=============== Call Function
-        imgs, labels, padded, w_max = imgsLabels(ds, data)       ######## <<<=============== Call Function
-        printTextDataProcess[key] = [imgs, labels, padded, w_max]
-
-    #### =Process Total box  ==== 
-    if total:
-        data_total=[processLine(line) for line in total] # processText(total)                ######## <<<=============== Call Function
-        _w_max = list(printTextDataProcess.keys())[-2]
-        w_max_total = printTextDataProcess[_w_max][3]
-        imgs_total = []
-        labels_total = []
-        for line in data_total:
-            img,label,iden=createPrintedLine(iden,line,font_path,config.headline3_font_size)
-            imgs_total.append(img)
-            labels_total.append(label)         
-
-        padded_total=[]
-        for img in imgs_total:
-            img=padImg(img,config.height_box,w_max_total) ### <<<<<================= Function
-            padded_total.append(img)
-
-        printTextDataProcess['total'] = [imgs_total, labels_total, padded_total, w_max_total]
-
-    ## ==== Create Table =========
-    _serial_key = list(printTextData.keys())[0]
-    num_rows = len(printTextData[_serial_key])+2
-    num_columns = len(printTextData)+1 #6/5/7
-    cell_height = config.height_box+config.line_width
-    cell_widths = []
-    for key, data_text in printTextData.items():
-        w_max = printTextDataProcess[key][3]
-        cell_width = w_max + config.line_width
-        cell_widths.append(cell_width)
-
-    ## Create Table
-    TableImg=createTable( num_rows,num_columns, config.line_width, cell_widths,  cell_height)
-
-    ## merge all padded
-    padded_all = []
-    for key, data_text in printTextDataProcess.items():
-        # print(key)
-        pad = printTextDataProcess[key][2]
-        for k in pad:
-            padded_all.append(k)
-
-    ## select locations for placing text
-    _,_,_,_,all_locs,labeled_img=selectPrintTextRegions(TableImg, cell_widths)
-
-    ## Binary Image: TableImg
-    TableImg=255-TableImg
-    TableImg[TableImg>0]=1
-
-    ## Place text on specific location of TableImg
-    for locs, pads in zip(all_locs, padded_all):
-      for i,img in zip([locs],[pads]):
-        idx = np.where(labeled_img==i)
-        y_min,y_max,x_min,x_max = np.min(idx[0]), np.max(idx[0]), np.min(idx[1]), np.max(idx[1])
-        TableImg[y_min:y_max,x_min:x_max]=img
-
-    return TableImg, all_locs, labeled_img 
-
-
-def placeHandwrittenTextOnTableImg(ds, printTextData, total):
     
-    """
-          @function author:
-          
-          Place Print Bangla text and handwritten text on specific loactions of Binary Image.
-
-          args:
-              ds                =    DataSet for Symbol (numbers hand written, bangla hand written)
-
-              printTextData     =    format of example dictionary: dict_ = {'serial': ["সেরিঃ",  
-                                                                                    "১",
-                                                                                    "২",
-                                                                                    "৩", 
-                                                                                    "৪", 
-                                                                                    "৫" ],
-                                                                        'brand': ["ব্র্যান্ডের নাম", 
-                                                                                    "র‍্যান্ডম প্রোডাক্ট নাম্বার ১",      : type <DICT>
-                                                                                    "র‍্যান্ডম বিড়ি",
-                                                                                    "আরো কিছু",
-                                                                                    "৪২০ মার্কা বিড়ি",
-                                                                                    "রং নাম্বার"],
-                                                                        'quantity': ["কোয়ান্টিটি"],
-                                                                        'rate': ["রেইট/গ্রোস"], 
-                                                                        'taka': ["টাকা"]
-                                                                        
-                                                                      } 
-                                    keys of the dictioary mention columns's name ("সেরিঃ","ব্র্যান্ডের নাম", "কোয়ান্টিটি", "রেইট/গ্রোস", "টাকা").
-                                    Others are serials and products name. 
-
-              total               =  text of total box (N.B., you can insert no value (None)). (example:total = ["টোটাল"])  : type <LIST>  
-              
-          returns:
-            Table_Image_with_Text =  Binary Image after placing pritten text and hand written on desired locations.
-
-    """
-    
-    
-    ## call func "drawsPrintTextOnTable()" for creating table image with text 
-    Table_Image_with_Text, all_locs, labeled_img = drawsPrintTextOnTable(ds, printTextData, total)
-    
-    ## find locations where you want to place handwritten text
-    others_locs = [i for i in range(1, all_locs[-1]+2) if i not in all_locs if i != all_locs[len(all_locs)-1]-1]
-    
-    ## number of columns
-    num_cols = len(printTextData)
-    
-    ## select some locations where you want to place handwritten text
-    List = [i for i in range(1,7)]
-    N = random.choice(List) # single item from the List
-    Updated_others_locs = random.sample(others_locs, N)
-    
-    ## Check whether you want to place rotate text or straight text
-    rotated_check=[bool(i) for i in np.array(np.random.randint(0,2,len(Updated_others_locs)))] # For TRUE
-    rot=0
-    imgs = []
-    for i in range(2, len(Updated_others_locs)+2):
-        img,_,_=create_word(i, "bangla", "handwritten", "number", ds=ds, use_dict=True)
-
-        if rotated_check[rot] == True:
-            List_degree = [i for i in range(10,45+5,5)]
-            N_deg = random.choice(List_degree) # single item from the List
-            rotated_img,M=rotate_image(img,N_deg)
-            imgs.append(rotated_img)
-
-        else:
-            imgs.append(img)
-
-        rot += 1
-        
-    for i,img in zip(Updated_others_locs,imgs):
-        idx = np.where(labeled_img==i)
-        y_min,y_max,x_min,x_max = np.min(idx[0]), np.max(idx[0]), np.min(idx[1]), np.max(idx[1])
-
-        ## resize bbox
-        List_extend_value = [i for i in range(30,60,5)]
-        N_extend = random.choice(List_extend_value) # single item from the List
-        if i % num_cols == 0 or i == all_locs[len(all_locs)-1]-1 or i==others_locs[len(others_locs)-1]:
-            y_min,y_max,x_min,x_max = y_min-N_extend,y_max+N_extend,x_min,x_max
-        else:
-            y_min,y_max,x_min,x_max = y_min-N_extend,y_max+N_extend,x_min-N_extend,x_max+N_extend
-
-        ## ignore lines of table
-        Table_Image_with_Text[y_min:y_max,x_min:x_max]=0
-
-        ## resize image
-        h_max = abs(y_max-y_min)
-        w_max = abs(x_max-x_min)
-        dim = (h_max, w_max)
-        _img = cv2.resize(img, dim[::-1], fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
-
-        ## place hand text into text image
-        Table_Image_with_Text[y_min:y_max,x_min:x_max]=_img
-
-    return Table_Image_with_Text
-    
+    return {"serial":slt_serial, "brand":slt_brand,"total":slt_total,"others":slt_others},label_img
