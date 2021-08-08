@@ -24,6 +24,7 @@ class LineSection:
     num_word_min =   2
     symbols      =   [".","-","/",",","।","(",")"]
     vocabs       =   ["mixed","number","grapheme"]
+    vweights     =   [0.1,0.1,0.8]
     max_syms     =   1
     font_sizes_big   =   [64,48]
     font_sizes_mid   =   [32,28,24]
@@ -37,6 +38,26 @@ class LineWithExtension(LineSection):
 #--------------------
 # format classes
 #--------------------
+class Table(LineSection):
+    serial           ={"bn":[['সি', 'রি', 'য়া', 'ল', ':'],
+                            ['ক্র', 'ম', ':'],
+                            ['ক্র', 'মি', 'ক'],
+                            ['ন', 'ম্ব', 'র'],
+                            ['ন', 'ং']],
+                        "en":[['s', 'e', 'r', 'i', 'a', 'l'], 
+                              ['s', ':'],
+                              ['n', 'u', 'm', ':'], 
+                              ['n', ':']]}
+    num_product_min  =  5
+    num_product_max  =  25
+    num_extCOL_min   =  3
+    num_extCOL_max   =  6
+    pad_dim          =  10
+    
+    vweights         =  [0.05,0.05,0.9]
+    products         =  []
+    column_names     =  []
+     
 
 class Head:
     min_line_section    =3
@@ -83,7 +104,7 @@ def rand_line_section(section,graphemes,numbers):
     max_sym  =random.randint(0,section.max_syms)
     num_word=random.randint(section.num_word_min,section.num_word_max)
     for i in range(num_word):
-        _vocab=random.choices(population=section.vocabs,weights=[0.1,0.1,0.8],k=1)[0]
+        _vocab=random.choices(population=section.vocabs,weights=section.vweights,k=1)[0]
         if _vocab=="mixed":
             vocab=graphemes+numbers
         elif _vocab=="grapheme":
@@ -91,7 +112,7 @@ def rand_line_section(section,graphemes,numbers):
         else:
             vocab=numbers
 
-        if random.choices(population=[0,1],weights=[0.1, 0.9],k=1)[0]==1:
+        if random.choices(population=[1,0],weights=[0.1, 0.9],k=1)[0]==1:
             if sym_count<=max_sym:
                 symbol=random.choice(section.symbols)
             else:
@@ -117,7 +138,7 @@ def rand_line_extension(section,graphemes,numbers,ext_type):
         line2=rand_line_section(section,graphemes,numbers)
         return line1,line2
 #--------------------
-# memo-functions
+# head-functions
 #--------------------
 
 
@@ -157,3 +178,30 @@ def rand_head(graphemes,numbers,head,line_section,line_ext):
         data["font_size"]=random.choice(line_ext.font_sizes_mid)
         head.single_exts.append([data])
     return head
+
+
+#--------------------
+# table-functions
+#--------------------
+
+
+def rand_products(graphemes,numbers,table):
+    '''
+        generates random head data
+        args:
+            graphemes   :   list of valid graphemes to use
+            numbers     :   list of valid number to use
+            table       :   table class
+    '''
+    # add line sections
+    table.font_size=random.choice(table.font_sizes_mid)
+    num_line_sections=random.randint(table.num_product_min,table.num_product_max)
+    for _ in range(num_line_sections):
+        table.products.append([{"words":rand_line_section(table,graphemes,numbers),"font_size":table.font_size}])
+    
+    return table
+
+if __name__=="__main__":
+    graphemes =  list(string.ascii_lowercase)
+    numbers   =  [str(i) for i in range(10)]
+    #rand_table(graphemes,numbers,Table)    

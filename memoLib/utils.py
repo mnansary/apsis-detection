@@ -70,8 +70,23 @@ def padLineImg(line_img,h_max,w_max):
     # pad
     line_img =np.concatenate([top_pad,line_img,bot_pad],axis=0)
     return line_img
+
+def padAllAround(img,pad_dim):
+    h,w=img.shape
+    # pads
+    left_pad =np.zeros((h,pad_dim))
+    right_pad=np.zeros((h,pad_dim))
+    # pad
+    img =np.concatenate([left_pad,img,right_pad],axis=1)
+    # shape
+    h,w=img.shape
+    top_pad =np.zeros((pad_dim,w))
+    bot_pad=np.zeros((pad_dim,w))
+    # pad
+    img =np.concatenate([top_pad,img,bot_pad],axis=0)
+    return img
 #---------------------------------------------------------------
-def placeWordOnMask(word,labeled_img,region_value,mask):
+def placeWordOnMask(word,labeled_img,region_value,mask,ext_reg=False):
     '''
         @author
         places a specific image on a given background at a specific location
@@ -81,22 +96,23 @@ def placeWordOnMask(word,labeled_img,region_value,mask):
             region_value       :   the specific value of the labled region
             mask               :   placement mask
         return:
-            back  :   back image after placing 'img'
+            mak :   mask image after placing 'img'
     '''
     idx=np.where(labeled_img==region_value)
     h_li,w_li=labeled_img.shape
     # region
     y_min,y_max,x_min,x_max = np.min(idx[0]), np.max(idx[0]), np.min(idx[1]), np.max(idx[1])
-    h_reg = abs(y_max-y_min)
-    w_reg = abs(x_max-x_min)
-    # ext
-    h_ext=int((random.randint(0,20)*h_reg)/100)
-    w_ext=int((random.randint(0,20)*w_reg)/100)
-    # region ext
-    if y_min-h_ext>0:y_min-=h_ext # extend min height
-    if y_max+h_ext<=h_li:y_max+=h_ext # extend max height
-    if x_min-w_ext>0:x_min-=w_ext # extend min width
-    if x_max+w_ext<=w_li:x_max+=w_ext # extend min width
+    if ext_reg:
+        h_reg = abs(y_max-y_min)
+        w_reg = abs(x_max-x_min)
+        # ext
+        h_ext=int((random.randint(0,20)*h_reg)/100)
+        w_ext=int((random.randint(0,20)*w_reg)/100)
+        # region ext
+        if y_min-h_ext>0:y_min-=h_ext # extend min height
+        if y_max+h_ext<=h_li:y_max+=h_ext # extend max height
+        if x_min-w_ext>0:x_min-=w_ext # extend min width
+        if x_max+w_ext<=w_li:x_max+=w_ext # extend min width
     # resize image    
     h_max = abs(y_max-y_min)
     w_max = abs(x_max-x_min)

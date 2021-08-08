@@ -20,6 +20,21 @@ from .utils import stripPads
 #-----------------------------------
 # line image
 #----------------------------------
+def handleExtensions(ext,font,max_width):
+    '''
+        creates/ adds extensions to lines
+    '''
+    width = font.getsize(ext)[0]
+    
+    # draw
+    image = PIL.Image.new(mode='L', size=font.getsize(ext))
+    draw = PIL.ImageDraw.Draw(image)
+    draw.text(xy=(0, 0), text=ext, fill=2, font=font)
+    
+    ext_img=[np.array(image) for _ in range(max_width//width)]
+    ext_img=np.concatenate(ext_img,axis=1)
+    return ext_img
+
 def createPrintedLine(iden,words,font,font_size):
     '''
         creates printed word image

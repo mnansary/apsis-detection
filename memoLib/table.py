@@ -171,7 +171,7 @@ def tableTextRegions(mask, cell_widths):
     slt_brand = slt_brand[:-1]
 
     # store unique value Total box
-    slt_total = lst[len(lst)-2]
+    slt_total = [lst[len(lst)-2]]
 
     # store unique value for other columns
     slt_others = list(range(3,len_cell_widths+1))

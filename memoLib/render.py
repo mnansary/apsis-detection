@@ -15,9 +15,10 @@ from glob import glob
 
 import PIL.Image,PIL.ImageDraw,PIL.ImageFont
 
-from .memo import rand_head,Head,LineSection,LineWithExtension
-from .word import createPrintedLine
-from .utils import padLineImg
+from .memo import rand_head,Head,LineSection,LineWithExtension,Table,rand_products,rand_word
+from .word import createPrintedLine,handleExtensions
+from .utils import padLineImg,padAllAround,placeWordOnMask
+from .table import createTable,tableTextRegions
 
 #----------------------------
 # render capacity: toolset
@@ -56,7 +57,7 @@ def renderMemoHead(ds,language,iden):
         font_paths=[font_path for font_path in glob(os.path.join(ds.english.fonts,"*.*"))]
     head=rand_head(graphemes,numbers,Head,LineSection,LineWithExtension)
     maps=renderFontMaps(LineSection,random.choice(font_paths))
-    
+    ext_sym=random.choice(LineWithExtension.ext_symbols)
     
     h_max=0
     w_max=0
@@ -126,8 +127,131 @@ def renderMemoHead(ds,language,iden):
         line_labels+=labels
     
     memo_head=np.concatenate(line_images,axis=0)
-    return memo_head,line_labels,iden
+    # extention
+    exts=[]
+    for label in line_labels:
+        if "ext" in label.values():
+            for k in label.keys():
+                exts.append(int(k))
+    
+    print_mask=np.copy(memo_head)
+    #printed mask,labeled mask, image
+    head_mask=np.zeros(memo_head.shape)
+    for v in exts:
+        head_mask[memo_head==v]=v
+        print_mask[memo_head==v]=0
+        idx=np.where(memo_head==v)
+        y_min,y_max,x_min,x_max = np.min(idx[0]), np.max(idx[0]), np.min(idx[1]), np.max(idx[1])
+        width=x_max-x_min
+        ext_word=handleExtensions(ext_sym,maps[str(32)],width)
+        memo_head=placeWordOnMask(ext_word,memo_head,v,memo_head)
+
+    # img,print,region,labels,iden 
+    return memo_head,print_mask,head_mask,line_labels,iden
 
 #----------------------------
 # render capacity: table 
 #----------------------------
+def renderMemoTable(ds,language,iden):
+    """
+        @function author:        
+        Create image of table part of Memo
+        args:
+            ds         = dataset object that holds all the paths and resources
+            language   = a specific language to use
+            iden       = a specific identifier for marking    
+    """
+    if language=="bangla":
+        graphemes =ds.bangla_graphemes
+        numbers   =ds.bangla.number_values
+        font_paths=[font_path for font_path in glob(os.path.join(ds.bangla.fonts,"*.*")) if "ANSI" not in font_path]
+    else:
+        graphemes =  list(string.ascii_lowercase)
+        numbers   =  [str(i) for i in range(10)]
+        font_paths=[font_path for font_path in glob(os.path.join(ds.english.fonts,"*.*"))]
+    maps=renderFontMaps(Table,random.choice(font_paths))
+    line_labels=[]
+    
+    # fill-up products
+    table=rand_products(graphemes,numbers,Table)
+    ## image
+    h_max=0
+    w_max=0
+    prod_images=[]
+    ## create line sections
+    for line_data in table.products:
+        assert len(line_data)==1
+        data=line_data[0]
+        img,labels,iden=createPrintedLine(iden=iden,words=data["words"],font=maps[str(data["font_size"])],font_size=data["font_size"])
+        h,w=img.shape
+        if h>h_max:h_max=h
+        if w>w_max:w_max=w
+        # append
+        prod_images.append(img)
+        line_labels+=labels
+    
+    prod_images=[padLineImg(line_img,h_max,w_max) for line_img in prod_images]
+    prod_images=[padAllAround(line_img,table.pad_dim) for line_img in prod_images]
+    
+    
+    
+    
+    # fill headers
+    header_images=[]
+    
+    cell_height=prod_images[0].shape[0]
+    w_prod=prod_images[0].shape[1]
+    ##serial
+    if language=="bangla":
+        words=[random.choice(Table.serial["bn"])]
+    else:
+        words=[random.choice(Table.serial["en"])]
+    img,labels,iden=createPrintedLine(iden,words,font=maps[str(table.font_size)],font_size=table.font_size)
+    header_images.append(padAllAround(img,table.pad_dim))
+    line_labels+=labels
+    
+    ##column headers
+    for i in range(random.randint(table.num_extCOL_min,table.num_extCOL_max)):
+        words=rand_word(graphemes,None,table.word_len_max,table.word_len_min)
+        img,labels,iden=createPrintedLine(iden,words,font=maps[str(table.font_size)],font_size=table.font_size)
+        if i==0:
+            # prod column
+            img=padLineImg(img,cell_height,w_prod)
+        else:
+            img=padLineImg(img,cell_height,img.shape[1]+2*table.pad_dim)
+        header_images.append(img)
+        line_labels+=labels
+
+    # fill total
+    words=rand_word(graphemes,None,table.word_len_max,table.word_len_min)
+    img,labels,iden=createPrintedLine(iden,words,font=maps[str(table.font_size)],font_size=table.font_size)
+    total_img=padAllAround(img,table.pad_dim)
+    line_labels+=labels
+    
+    
+    # table_mask
+    table_mask=createTable(len(prod_images)+1,len(header_images)+1,2,[img.shape[1] for img in header_images],cell_height)
+    regions,labeled_table=tableTextRegions(table_mask,[img.shape[1] for img in header_images])
+
+    # region fillup 
+    printed_mask=np.zeros(table_mask.shape)
+    # header regs
+    #{"serial":slt_serial, "brand":slt_brand,"total":slt_total,"others":slt_others}
+    header_regions=[regions["serial"][0]]+[regions["brand"][0]]+regions["others"]
+    for reg_val,word in zip(header_regions,header_images):
+        printed_mask=placeWordOnMask(word,labeled_table,reg_val,printed_mask)
+        labeled_table[labeled_table==reg_val]=0
+
+    # total fillup
+    printed_mask=placeWordOnMask(total_img,labeled_table,regions["total"][0],printed_mask)
+
+    # product fillup
+    product_regions=regions["brand"][1:]
+    for reg_val,word in zip(product_regions,prod_images):
+        printed_mask=placeWordOnMask(word,labeled_table,reg_val,printed_mask)
+        labeled_table[labeled_table==reg_val]=0
+    
+    # img,print,region,labels,iden 
+    return table_mask+printed_mask, printed_mask,labeled_table,line_labels,iden
+            
+
