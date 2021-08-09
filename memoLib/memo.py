@@ -42,18 +42,6 @@ class LineWithExtension(LineSection):
 #--------------------
 # format classes
 #--------------------
-
-        
-class Bottom(LineSection):
-    def __init__(self):
-        super().__init__()
-        self.sender_line  =[]
-        self.reciver_line =[]
-        self.middle_line  =[]
-        self.pad          =10
-
-
-
 class Placement(object):
     def __init__(self):
         self.head_min        =3
@@ -224,26 +212,32 @@ def rand_products(graphemes,numbers,table):
     
     return table
 
-# #--------------------
-# # table-functions
-# #--------------------
+#--------------------
+# bottom-functions
+#--------------------
+class Bottom(LineSection):
+    def __init__(self):
+        super().__init__()
+        self.sender_line  =[]
+        self.reciver_line =[]
+        self.middle_line  =[]
+        self.pad          =10
 
-
-# def rand_bottom(graphemes,numbers,bottom):
-#     '''
-#         generates random head data
-#         args:
-#             graphemes   :   list of valid graphemes to use
-#             numbers     :   list of valid number to use
-#             bottom       :   bottom class
-#     '''
-#     # add line sections
-#     bottom.font_size=random.choice(bottom.font_sizes_mid)
-#     bottom.sender_line.append([{"words":rand_line_section(bottom,graphemes,numbers),"font_size":bottom.font_size}])
-#     bottom.reciver_line.append([{"words":rand_line_section(bottom,graphemes,numbers),"font_size":bottom.font_size}])
-#     bottom.middle_line.append([{"words":rand_line_section(bottom,graphemes,numbers),"font_size":bottom.font_size}])
+def rand_bottom(graphemes,numbers,bottom):
+    '''
+        generates random head data
+        args:
+            graphemes   :   list of valid graphemes to use
+            numbers     :   list of valid number to use
+            bottom       :   bottom class
+    '''
+    # add line sections
+    bottom.font_size=random.choice(bottom.font_sizes_mid)
+    bottom.sender_line.append({"line":rand_line(bottom,graphemes,numbers),"font_size":bottom.font_size})
+    bottom.reciver_line.append({"line":rand_line(bottom,graphemes,numbers),"font_size":bottom.font_size})
+    bottom.middle_line.append({"line":rand_line(bottom,graphemes,numbers),"font_size":bottom.font_size})
     
-#     return bottom
+    return bottom
 # #--------------------
 # # placement-functions
 # #--------------------
