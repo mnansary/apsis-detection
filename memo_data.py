@@ -2,8 +2,8 @@ from memoLib.dataset import DataSet
 from memoLib.utils import create_dir,LOG_INFO
 from memoLib.joiner import create_memo_data
 
-data_dir= "/media/ansary/DriveData/Work/bengalAI/datasets/Detection/source"
-save_dir="/media/ansary/DriveData/Work/bengalAI/datasets/Detection/"
+data_dir= "/home/apsisdev/ansary/DATASETS/Detection/source/"
+save_dir="/home/apsisdev/ansary/DATASETS/Detection/"
 save_dir=create_dir(save_dir,"memo_sep")
 img_dir =create_dir(save_dir,"images")
 pr_dir =create_dir(save_dir,"prints")
