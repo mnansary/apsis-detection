@@ -8,7 +8,7 @@ save_dir=create_dir(save_dir,"memo_sep")
 img_dir =create_dir(save_dir,"images")
 pr_dir =create_dir(save_dir,"prints")
 hw_dir =create_dir(save_dir,"hands")
-n_data=10
+n_data=100000
 ds=DataSet(data_dir)
 
 
