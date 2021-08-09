@@ -36,7 +36,7 @@ def renderFontMaps(LineSection,font_path):
 #----------------------------
 # render capacity: memo head
 #----------------------------
-def renderMemoHead(ds,language,iden):
+def renderMemoHead(ds,language,iden,font_path=None):
 
 
     """
@@ -50,14 +50,23 @@ def renderMemoHead(ds,language,iden):
     if language=="bangla":
         graphemes =ds.bangla_graphemes
         numbers   =ds.bangla.number_values
-        font_paths=[font_path for font_path in glob(os.path.join(ds.bangla.fonts,"*.*")) if "ANSI" not in font_path]
+        font_paths=[font_path for font_path in glob(os.path.join(ds.bangla.fonts,"*.*")) if "ANSI" not in font_path and "Lohit" not in font_path]
     else:
         graphemes =  list(string.ascii_lowercase)
         numbers   =  [str(i) for i in range(10)]
         font_paths=[font_path for font_path in glob(os.path.join(ds.english.fonts,"*.*"))]
-    head=rand_head(graphemes,numbers,Head,LineSection,LineWithExtension)
-    maps=renderFontMaps(LineSection,random.choice(font_paths))
-    ext_sym=random.choice(LineWithExtension.ext_symbols)
+
+    head=Head()
+    lineSection=LineSection()
+    lineWithExtension=LineWithExtension()
+    head=rand_head(graphemes,numbers,head,lineSection,lineWithExtension)
+    
+    if font_path is None:
+        maps=renderFontMaps(lineSection,random.choice(font_paths))
+    else:
+        maps=renderFontMaps(lineSection,font_path)
+    
+    ext_sym=random.choice(lineWithExtension.ext_symbols)
     
     h_max=0
     w_max=0
@@ -145,8 +154,17 @@ def renderMemoHead(ds,language,iden):
         width=x_max-x_min
         ext_word=handleExtensions(ext_sym,maps[str(32)],width)
         memo_head=placeWordOnMask(ext_word,memo_head,v,memo_head)
+        memo_head[memo_head==v]=0
 
-    # img,print,region,labels,iden 
+    # img,print,region,labels,iden
+    for label in line_labels:
+        for k,v in label.items():
+            if v!="#":
+                memo_head[memo_head==int(k)]=255
+            else:
+                memo_head[memo_head==int(k)]=0
+            
+    memo_head=255-memo_head
     return memo_head,print_mask,head_mask,line_labels,iden
 
 #----------------------------
@@ -164,16 +182,17 @@ def renderMemoTable(ds,language,iden):
     if language=="bangla":
         graphemes =ds.bangla_graphemes
         numbers   =ds.bangla.number_values
-        font_paths=[font_path for font_path in glob(os.path.join(ds.bangla.fonts,"*.*")) if "ANSI" not in font_path]
+        font_paths=[font_path for font_path in glob(os.path.join(ds.bangla.fonts,"*.*")) if "ANSI" not in font_path and "Lohit" not in font_path]
     else:
         graphemes =  list(string.ascii_lowercase)
         numbers   =  [str(i) for i in range(10)]
         font_paths=[font_path for font_path in glob(os.path.join(ds.english.fonts,"*.*"))]
-    maps=renderFontMaps(Table,random.choice(font_paths))
+    table=Table()
+    maps=renderFontMaps(table,random.choice(font_paths))
     line_labels=[]
     
     # fill-up products
-    table=rand_products(graphemes,numbers,Table)
+    table=rand_products(graphemes,numbers,table)
     ## image
     h_max=0
     w_max=0
@@ -192,7 +211,7 @@ def renderMemoTable(ds,language,iden):
     
     prod_images=[padLineImg(line_img,h_max,w_max) for line_img in prod_images]
     prod_images=[padAllAround(line_img,table.pad_dim) for line_img in prod_images]
-    
+    font_size=data["font_size"]
     
     
     
@@ -203,17 +222,17 @@ def renderMemoTable(ds,language,iden):
     w_prod=prod_images[0].shape[1]
     ##serial
     if language=="bangla":
-        words=[random.choice(Table.serial["bn"])]
+        words=[random.choice(table.serial["bn"])]
     else:
-        words=[random.choice(Table.serial["en"])]
-    img,labels,iden=createPrintedLine(iden,words,font=maps[str(table.font_size)],font_size=table.font_size)
+        words=[random.choice(table.serial["en"])]
+    img,labels,iden=createPrintedLine(iden,words,font=maps[str(font_size)],font_size=font_size)
     header_images.append(padAllAround(img,table.pad_dim))
     line_labels+=labels
     
     ##column headers
     for i in range(random.randint(table.num_extCOL_min,table.num_extCOL_max)):
-        words=rand_word(graphemes,None,table.word_len_max,table.word_len_min)
-        img,labels,iden=createPrintedLine(iden,words,font=maps[str(table.font_size)],font_size=table.font_size)
+        words=[rand_word(graphemes,None,table.word_len_max,table.word_len_min)]
+        img,labels,iden=createPrintedLine(iden,words,font=maps[str(font_size)],font_size=font_size)
         if i==0:
             # prod column
             img=padLineImg(img,cell_height,w_prod)
@@ -223,12 +242,27 @@ def renderMemoTable(ds,language,iden):
         line_labels+=labels
 
     # fill total
-    words=rand_word(graphemes,None,table.word_len_max,table.word_len_min)
-    img,labels,iden=createPrintedLine(iden,words,font=maps[str(table.font_size)],font_size=table.font_size)
+    words=[rand_word(graphemes,None,table.word_len_max,table.word_len_min)]
+    img,labels,iden=createPrintedLine(iden,words,font=maps[str(font_size)],font_size=font_size)
     total_img=padAllAround(img,table.pad_dim)
     line_labels+=labels
     
     
+    # fill serial
+    serial_images=[]
+    for i in range(len(prod_images)):
+        sel_val=str(i)
+        word=[v for v in sel_val]
+        if language=="bangla":
+            word=[numbers[int(v)] for v in word]
+        word+=[' ']
+        img,labels,iden=createPrintedLine(iden,word,font=maps[str(font_size)],font_size=font_size)
+        line_labels+=labels
+        serial_images.append(padAllAround(img,table.pad_dim))    
+
+
+
+
     # table_mask
     table_mask=createTable(len(prod_images)+1,len(header_images)+1,2,[img.shape[1] for img in header_images],cell_height)
     regions,labeled_table=tableTextRegions(table_mask,[img.shape[1] for img in header_images])
@@ -251,7 +285,29 @@ def renderMemoTable(ds,language,iden):
         printed_mask=placeWordOnMask(word,labeled_table,reg_val,printed_mask)
         labeled_table[labeled_table==reg_val]=0
     
+    # serial fillup
+    serial_regions=regions["serial"][1:]
+    for reg_val,word in zip(serial_regions,serial_images):
+        printed_mask=placeWordOnMask(word,labeled_table,reg_val,printed_mask)
+        labeled_table[labeled_table==reg_val]=0
+    
+
+    table_img=np.copy(printed_mask)
+    # img,print,region,labels,iden
+    for label in line_labels:
+        for k,v in label.items():
+            if v!="#":
+                table_img[table_img==int(k)]=1
+            else:
+                table_img[table_img==int(k)]=0
+    table_mask[table_mask>0]=1
+    table_mask=1-table_mask
+    table_img=table_img+table_mask
+    table_img[table_img>0]=255
+    table_img=255-table_img
+    
+
     # img,print,region,labels,iden 
-    return table_mask+printed_mask, printed_mask,labeled_table,line_labels,iden
+    return table_img, printed_mask,labeled_table,line_labels,iden
             
 

@@ -17,59 +17,67 @@ class PAD:
     top             =  ['ই', 'ঈ', 'উ', 'ঊ', 'ঐ','ঔ','ট', 'ঠ',' ি', 'ী', 'ৈ', 'ৌ','ঁ','র্']
     bot             =  ['ু', 'ূ', 'ৃ',]
             
-class LineSection:
-    word_len_max =   7
-    word_len_min =   1
-    num_word_max =   5
-    num_word_min =   2
-    symbols      =   [".","-","/",",","।","(",")"]
-    vocabs       =   ["mixed","number","grapheme"]
-    vweights     =   [0.1,0.1,0.8]
-    max_syms     =   1
-    font_sizes_big   =   [64,48]
-    font_sizes_mid   =   [32,28,24]
-                                       
+class LineSection(object):
+    def __init__(self):
+        self.word_len_max =   7
+        self.word_len_min =   1
+        self.num_word_max =   5
+        self.num_word_min =   2
+        self.symbols      =   [".","-","/",",","।","(",")"]
+        self.vocabs       =   ["mixed","number","grapheme"]
+        self.vweights     =   [0.1,0.1,0.8]
+        self.max_syms     =   1
+        self.font_sizes_big   =   [64,48]
+        self.font_sizes_mid   =   [32,28,24]
+                                        
 
 class LineWithExtension(LineSection):
-    num_word_max =   2
-    ext_types    =   ["single","double"]
-    ext_symbols  =   [".","_"]
+    def __init__(self):
+        super().__init__()
+        self.num_word_max =   2
+        self.ext_types    =   ["single","double"]
+        self.ext_symbols  =   [".","_"]
 
 #--------------------
 # format classes
 #--------------------
 class Table(LineSection):
-    serial           ={"bn":[['সি', 'রি', 'য়া', 'ল', ':'],
-                            ['ক্র', 'ম', ':'],
-                            ['ক্র', 'মি', 'ক'],
-                            ['ন', 'ম্ব', 'র'],
-                            ['ন', 'ং']],
-                        "en":[['s', 'e', 'r', 'i', 'a', 'l'], 
-                              ['s', ':'],
-                              ['n', 'u', 'm', ':'], 
-                              ['n', ':']]}
-    num_product_min  =  5
-    num_product_max  =  25
-    num_extCOL_min   =  3
-    num_extCOL_max   =  6
-    pad_dim          =  10
+    def __init__(self):
+        super().__init__()
     
-    vweights         =  [0.05,0.05,0.9]
-    products         =  []
-    column_names     =  []
-     
+        self.serial           ={"bn":[['সি', 'রি', 'য়া', 'ল', ':'],
+                                ['ক্র', 'ম', ':'],
+                                ['ক্র', 'মি', 'ক'],
+                                ['ন', 'ম্ব', 'র'],
+                                ['ন', 'ং']],
+                            "en":[['s', 'e', 'r', 'i', 'a', 'l'], 
+                                ['s', ':'],
+                                ['n', 'u', 'm', ':'], 
+                                ['n', ':']]}
+        self.num_product_min  =  5
+        self.num_product_max  =  25
+        self.num_extCOL_min   =  3
+        self.num_extCOL_max   =  6
+        self.pad_dim          =  10
+        
+        self.vweights         =  [0.05,0.05,0.9]
+        self.products         =  []
+        self.column_names     =  []
+        
 
-class Head:
-    min_line_section    =3
-    max_line_section    =5
-    min_single_exts     =2
-    max_single_exts     =5
-    min_double_exts     =1
-    max_double_exts     =3
+class Head(object):
+    def __init__(self):
+        
+        self.min_line_section    =3
+        self.max_line_section    =5
+        self.min_single_exts     =2
+        self.max_single_exts     =5
+        self.min_double_exts     =1
+        self.max_double_exts     =3
 
-    line_sections       =[]   # [{words,font_size}]
-    single_exts         =[]   # [{words,font_size,ext,ext_len}]
-    double_exts         =[]   # [{words,font_size,ext,ext_len},{words,font_size,ext,ext_len}]
+        self.line_sections       =[]   # [{words,font_size}]
+        self.single_exts         =[]   # [{words,font_size,ext,ext_len}]
+        self.double_exts         =[]   # [{words,font_size,ext,ext_len},{words,font_size,ext,ext_len}]
 
     
 #--------------------

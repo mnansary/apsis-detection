@@ -35,7 +35,7 @@ def handleExtensions(ext,font,max_width):
     ext_img=np.concatenate(ext_img,axis=1)
     return ext_img
 
-def createPrintedLine(iden,words,font,font_size):
+def createPrintedLine(iden,words,font,font_size,remove_last_space=True):
     '''
         creates printed word image
         args:
@@ -70,21 +70,25 @@ def createPrintedLine(iden,words,font,font_size):
         # construct labels
         imgs=[]
         comp_str=''
-        for comp in comps:
-            if comp==' ':
-                comp_str+="#"
-            comp_str+=comp    
-            # draw
-            image = PIL.Image.new(mode='L', size=(max_dim,max_dim))
-            draw = PIL.ImageDraw.Draw(image)
-            draw.text(xy=(0, 0), text=comp_str, fill=1, font=font)
-            imgs.append(np.array(image))
-            # label
-            if comp==" ":
-                comp="space"
-            label[iden] = comp 
-            iden+=1
+        for cidx,comp in enumerate(comps):
+            if idx==len(words)-1 and remove_last_space==True and cidx==len(comps)-1:
+                break
             
+            else:
+                if comp==" ":
+                    comp_str+="#"
+                comp_str+=comp    
+                # draw
+                image = PIL.Image.new(mode='L', size=(max_dim,max_dim))
+                draw = PIL.ImageDraw.Draw(image)
+                draw.text(xy=(0, 0), text=comp_str, fill=1, font=font)
+                imgs.append(np.array(image))
+                # label
+                if comp==" ":
+                    comp="#"
+                label[iden] = comp 
+                iden+=1
+                
         
         # add images
         img=sum(imgs)
@@ -111,6 +115,7 @@ def createPrintedLine(iden,words,font,font_size):
     # add words
     img=np.concatenate(word_imgs,axis=1)    
     return img,labels,iden
+
 
 
 
