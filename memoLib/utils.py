@@ -46,9 +46,12 @@ def stripPads(arr,val):
   return arr
 #---------------------------------------------------------------
 
-def padLineImg(line_img,h_max,w_max):
+def padToFixedHeightWidth(img,h_max,w_max):
+    '''
+        pads an image to fixed height and width
+    '''
     # shape
-    h,w=line_img.shape
+    h,w=img.shape
     # pad widths
     left_pad_width =(w_max-w)//2
     # print(left_pad_width)
@@ -57,10 +60,10 @@ def padLineImg(line_img,h_max,w_max):
     left_pad =np.zeros((h,left_pad_width))
     right_pad=np.zeros((h,right_pad_width))
     # pad
-    line_img =np.concatenate([left_pad,line_img,right_pad],axis=1)
+    img =np.concatenate([left_pad,img,right_pad],axis=1)
     
     # shape
-    h,w=line_img.shape
+    h,w=img.shape
     # pad heights
     top_pad_height =(h_max-h)//2
     bot_pad_height=h_max-h-top_pad_height
@@ -68,10 +71,13 @@ def padLineImg(line_img,h_max,w_max):
     top_pad =np.zeros((top_pad_height,w))
     bot_pad=np.zeros((bot_pad_height,w))
     # pad
-    line_img =np.concatenate([top_pad,line_img,bot_pad],axis=0)
-    return line_img
+    img =np.concatenate([top_pad,img,bot_pad],axis=0)
+    return img
 
 def padAllAround(img,pad_dim):
+    '''
+        pads all around the image
+    '''
     h,w=img.shape
     # pads
     left_pad =np.zeros((h,pad_dim))
@@ -85,8 +91,40 @@ def padAllAround(img,pad_dim):
     # pad
     img =np.concatenate([top_pad,img,bot_pad],axis=0)
     return img
+
+def padToFixImgWidth(img,width):
+    '''
+        fix image based purely by width
+    '''
+    h,w=img.shape
+    # case 1: w< width
+    if w<width:
+        pad_w=width-w
+        if pad_w%2==0:
+            pad =np.zeros((h,pad_w//2))
+            img=np.concatenate([pad,img,pad],axis=1)
+        else:
+            pad=np.zeros((h,pad_w))
+            if random.choice([1,0])==1:
+                img=np.concatenate([img,pad],axis=1)
+            else:
+                img=np.concatenate([pad,img],axis=1)
+    else:
+        h_needed=int(width* h/w) 
+        img = cv2.resize(img, (width,h_needed), fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
+        pad_h=h-h_needed
+        if pad_h%2==0:
+            pad =np.zeros((pad_h//2,width))
+            img=np.concatenate([pad,img,pad],axis=0)
+        else:
+            pad=np.zeros((pad_h,width))
+            if random.choice([1,0])==1:
+                img=np.concatenate([img,pad],axis=0)
+            else:
+                img=np.concatenate([pad,img],axis=0)
+    return img 
 #---------------------------------------------------------------
-def placeWordOnMask(word,labeled_img,region_value,mask,ext_reg=False):
+def placeWordOnMask(word,labeled_img,region_value,mask,ext_reg=False,fill=False):
     '''
         @author
         places a specific image on a given background at a specific location
@@ -95,14 +133,16 @@ def placeWordOnMask(word,labeled_img,region_value,mask,ext_reg=False):
             labeled_img        :   labeled image to place the image
             region_value       :   the specific value of the labled region
             mask               :   placement mask
+            ext_reg            :   extend the region to place
+            fill
         return:
             mak :   mask image after placing 'img'
     '''
     idx=np.where(labeled_img==region_value)
-    h_li,w_li=labeled_img.shape
     # region
     y_min,y_max,x_min,x_max = np.min(idx[0]), np.max(idx[0]), np.min(idx[1]), np.max(idx[1])
     if ext_reg:
+        h_li,w_li=labeled_img.shape
         h_reg = abs(y_max-y_min)
         w_reg = abs(x_max-x_min)
         # ext
@@ -113,10 +153,22 @@ def placeWordOnMask(word,labeled_img,region_value,mask,ext_reg=False):
         if y_max+h_ext<=h_li:y_max+=h_ext # extend max height
         if x_min-w_ext>0:x_min-=w_ext # extend min width
         if x_max+w_ext<=w_li:x_max+=w_ext # extend min width
-    # resize image    
-    h_max = abs(y_max-y_min)
-    w_max = abs(x_max-x_min)
-    word = cv2.resize(word, (w_max,h_max), fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
+    
+    if fill:
+        # resize image    
+        h_max = abs(y_max-y_min)
+        w_max = abs(x_max-x_min)
+        word = cv2.resize(word, (w_max,h_max), fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
+    
+    else:# unstable NOW    
+        # resize image    
+        h_max = abs(y_max-y_min)
+        w_max = abs(x_max-x_min)
+        h,w=word.shape
+        w_needed=int(h_max* w/h) 
+        word = cv2.resize(word, (w_needed,h_max), fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
+        # fix padding
+        word=padToFixImgWidth(word,w_max)    
     # place on mask
     mask[y_min:y_max,x_min:x_max]=word
     return mask

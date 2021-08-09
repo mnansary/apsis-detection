@@ -29,114 +29,38 @@ def handleExtensions(ext,font,max_width):
     # draw
     image = PIL.Image.new(mode='L', size=font.getsize(ext))
     draw = PIL.ImageDraw.Draw(image)
-    draw.text(xy=(0, 0), text=ext, fill=2, font=font)
+    draw.text(xy=(0, 0), text=ext, fill=1, font=font)
     
     ext_img=[np.array(image) for _ in range(max_width//width)]
     ext_img=np.concatenate(ext_img,axis=1)
     return ext_img
 
-def createPrintedLine(iden,words,font,font_size,remove_last_space=True):
+def createPrintedLine(line,font):
     '''
         creates printed word image
         args:
-            iden            :       identifier marking value starting
-            words           :       the list of components
-            font            :       the desired font
-            font_size       :       the desized size        
-        returns:
-            img     :       marked word image
-            labels  :       dictionary of label {iden:label}
-            iden    :       the final identifier
-    '''
-    labels=[]
-    word_imgs=[]
-    for idx,comps in enumerate(words):
-        # for word
-        label={}
-        # components
-        comps=[comp for comp in comps if comp is not None]
-        # max render image
-        min_offset=100
-        max_dim=len(comps)*font_size+min_offset
-        
-        # reconfigure comps
-        mods=['ঁ', 'ং', 'ঃ']
-        for idx,comp in enumerate(comps):
-            if idx < len(comps)-1 and comps[idx+1] in mods:
-                comps[idx]+=comps[idx+1]
-                comps[idx+1]=None 
-                
-        comps=[comp for comp in comps if comp is not None]
-        # construct labels
-        imgs=[]
-        comp_str=''
-        for cidx,comp in enumerate(comps):
-            if idx==len(words)-1 and remove_last_space==True and cidx==len(comps)-1:
-                break
+            line           :       the string
+            font           :       the desired font
             
-            else:
-                if comp==" ":
-                    comp_str+="#"
-                comp_str+=comp    
-                # draw
-                image = PIL.Image.new(mode='L', size=(max_dim,max_dim))
-                draw = PIL.ImageDraw.Draw(image)
-                draw.text(xy=(0, 0), text=comp_str, fill=1, font=font)
-                imgs.append(np.array(image))
-                # label
-                if comp==" ":
-                    comp="#"
-                label[iden] = comp 
-                iden+=1
-                
-        
-        # add images
-        img=sum(imgs)
-        img=stripPads(img,0)
-        # idx=np.where(img>0)
-        # y_min,y_max,x_min,x_max = np.min(idx[0]), np.max(idx[0]), np.min(idx[1]), np.max(idx[1])
-        # img=img[y_min:y_max,x_min:x_max]
-        
-        # offset
-        vals=list(np.unique(img))
-        vals=sorted(vals,reverse=True)
-        vals=vals[:-1]
-        # set values
-        _img=np.zeros(img.shape)
-        for v,l in zip(vals,label.keys()):
-            _img[img==v]=l
-        # resize
-        h,w=_img.shape 
-        width= int(font_size* w/h) 
-        img=cv2.resize(_img,(width,font_size),fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
-        # images and labels
-        word_imgs.append(img)
-        labels.append(label)
-    # add words
-    img=np.concatenate(word_imgs,axis=1)    
-    return img,labels,iden
+        returns:
+            img     :       printed line image
+            
+    '''
+    # draw
+    image = PIL.Image.new(mode='L', size=font.getsize(line))
+    draw = PIL.ImageDraw.Draw(image)
+    draw.text(xy=(0, 0), text=line, fill=1, font=font)
+    return np.array(image)
 
-
-
-
-#-------------------------------------------------------------------------------------------------------------------------------------------------------
-#--------------------
-# word functions 
-#--------------------
-# def addSpace(img,iden):
-#     '''
-#         adds a space at the end of the word
-#     '''
-#     h,_=img.shape
-#     width=random.randint(config.word_min_space,config.word_max_space)
-#     space=np.ones((h,width))*iden
-#     return np.concatenate([img,space],axis=1)
-
-
+    
+# #-----------------------------------
+# # line image
+# #----------------------------------
 # def createHandwritenWords(iden,
 #                          df,
 #                          comps,
-#                          pad):
+#                          pad,
+#                          comp_dim):
 #     '''
 #         creates handwriten word image
 #         args:
@@ -149,6 +73,7 @@ def createPrintedLine(iden,words,font,font_size,remove_last_space=True):
 #                                 double_pad_dim
 #                                 top
 #                                 bot
+#             comp_dim:       component dimension 
 #         returns:
 #             img     :       marked word image
 #             label   :       dictionary of label {iden:label}
@@ -156,7 +81,7 @@ def createPrintedLine(iden,words,font,font_size,remove_last_space=True):
 #     '''
 #     comps=[str(comp) for comp in comps]
 #     # select a height
-#     height=config.comp_dim
+#     height=comp_dim
 #     # reconfigure comps
 #     mods=['ঁ', 'ং', 'ঃ']
 #     while comps[0] in mods:
@@ -226,11 +151,24 @@ def createPrintedLine(iden,words,font,font_size,remove_last_space=True):
 #         label[iden] = comp 
 #         iden+=1
 #     img=np.concatenate(imgs,axis=1)
-#     # add space
-#     img=addSpace(img,iden)
-#     label[iden]=' '
-#     iden+=1
+
 #     return img,label,iden
+
+
+#-------------------------------------------------------------------------------------------------------------------------------------------------------
+#--------------------
+# word functions 
+#--------------------
+# def addSpace(img,iden):
+#     '''
+#         adds a space at the end of the word
+#     '''
+#     h,_=img.shape
+#     width=random.randint(config.word_min_space,config.word_max_space)
+#     space=np.ones((h,width))*iden
+#     return np.concatenate([img,space],axis=1)
+
+
 
 # def createPrintedWords(iden,
 #                        comps,
