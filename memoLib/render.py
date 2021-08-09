@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 from glob import glob
 
 import PIL.Image,PIL.ImageDraw,PIL.ImageFont
+from numpy.lib.arraypad import pad
 
 from .memo import Head,Table,Bottom,LineSection,LineWithExtension
 from .memo import rand_head,rand_products,rand_word,rand_bottom
@@ -38,7 +39,7 @@ def renderFontMaps(LineSection,font_path):
 #----------------------------
 # render capacity: memo head
 #----------------------------
-def renderMemoHead(ds,language):
+def renderMemoHead(ds,language,max_width):
 
 
     """
@@ -74,7 +75,7 @@ def renderMemoHead(ds,language):
     #--------------------------------------------
     reg_iden=5
     h_max=0
-    w_max=0
+    w_max=max_width
     line_images=[]
     # create line sections
     for line_data in head.line_sections:
@@ -158,10 +159,11 @@ def renderMemoHead(ds,language):
         x_min,x_max = np.min(idx[1]), np.max(idx[1])
         width=x_max-x_min
         ext_word=handleExtensions(ext_sym,maps[str(lineSection.font_sizes_mid[-1])],width)
-        # place
-        img=placeWordOnMask(ext_word,img,v,img)
-        img[img==v]=0
-    
+        if ext_word is not None:
+            # place
+            img=placeWordOnMask(ext_word,img,v,img)
+            img[img==v]=0
+        
     return img,printed,region
 
 #----------------------------
@@ -280,7 +282,7 @@ def renderMemoTable(ds,language):
 
     # total fillup
     printed=placeWordOnMask(total_img,region,regions["total"][0],printed,fill=True)
-
+    region[region==regions["total"][0]]=0
     # product fillup
     product_regions=regions["brand"][1:]
     for reg_val,word in zip(product_regions,prod_images):
@@ -304,7 +306,7 @@ def renderMemoTable(ds,language):
 #----------------------------
 # render capacity: bottom 
 #----------------------------
-def renderMemoBottom(ds,language):
+def renderMemoBottom(ds,language,max_width,pad_dim=10):
     """
         @function author:        
         Create image of table part of Memo
@@ -354,18 +356,16 @@ def renderMemoBottom(ds,language):
 
     data=bottom.middle_line[0]
     mid_img=createPrintedLine(line=data["line"],font=maps[str(data["font_size"])])
-
-    hm,wm=mid_img.shape
-    nwidth= int(h_max* wm/hm) 
-    mid_img=cv2.resize(mid_img,(nwidth,h_max),fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
+    mid_img=padToFixedHeightWidth(mid_img,mid_img.shape[0]+2*pad_dim,max_width)
     
-    mid_pad=np.zeros_like(mid_img)
+    
+    mid_pad=np.zeros((h_max,max_width//2))
 
     sign_images=[sign_images[0]*3,mid_pad,sign_images[-1]*4]
     sign_img=np.concatenate(sign_images,axis=1)
 
     h,w=sign_img.shape
-    mid_img=padToFixedHeightWidth(mid_img,h,w)
+    sign_img=padToFixedHeightWidth(sign_img,sign_img.shape[0]+2*pad_dim,max_width)
     # print_mask
     if random.choice([0,1])==1:
         printed=np.concatenate([sign_img,mid_img],axis=0)

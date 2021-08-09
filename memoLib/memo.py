@@ -42,17 +42,7 @@ class LineWithExtension(LineSection):
 #--------------------
 # format classes
 #--------------------
-class Placement(object):
-    def __init__(self):
-        self.head_min        =3
-        self.head_max        =4
-        self.head_number_min =1
-        self.min_word_len    =2
-        self.max_word_len    =7 
-        self.comp_dim        =64 
-        self.table_min       =3 
-        self.min_num_len     =2
-        self.max_num_len     =4 
+
         
 
 #--------------------
@@ -126,12 +116,12 @@ def rand_line_with_extension(section,graphemes,numbers,ext_type):
 class Head(object):
     def __init__(self):
         
-        self.min_line_section    =3
-        self.max_line_section    =5
-        self.min_single_exts     =2
-        self.max_single_exts     =4
+        self.min_line_section    =2
+        self.max_line_section    =4
+        self.min_single_exts     =1
+        self.max_single_exts     =2
         self.min_double_exts     =1
-        self.max_double_exts     =3
+        self.max_double_exts     =2
 
         self.line_sections       =[]   # [{words,font_size}]
         self.single_exts         =[]   # [{words,font_size,ext,ext_len}]
@@ -188,9 +178,9 @@ class Table(LineSection):
         self.serial           ={"bn":['সিরিয়াল:', 'ক্রম:', 'ক্রমিক', 'নম্বর', 'নং'],
                                 "en":['serial', 's:', 'num:', 'n:']}
         self.num_product_min  =  5
-        self.num_product_max  =  25
+        self.num_product_max  =  15
         self.num_extCOL_min   =  3
-        self.num_extCOL_max   =  6
+        self.num_extCOL_max   =  7
         
         self.vweights         =  [0.05,0.05,0.9]
         self.products         =  []
@@ -215,13 +205,24 @@ def rand_products(graphemes,numbers,table):
 #--------------------
 # bottom-functions
 #--------------------
-class Bottom(LineSection):
+class Bottom(object):
     def __init__(self):
         super().__init__()
         self.sender_line  =[]
         self.reciver_line =[]
         self.middle_line  =[]
         self.pad          =10
+        self.word_len_max =   5
+        self.word_len_min =   3
+        self.num_word_max =   1
+        self.num_word_min =   1
+        self.symbols      =   [".","-","/",",","।","(",")"]
+        self.vocabs       =   ["mixed","number","grapheme"]
+        self.vweights     =   [0.1,0.1,0.8]
+        self.max_syms     =   1
+        self.font_sizes_big   =   [128,112,96]
+        self.font_sizes_mid   =   [80,64]
+        
 
 def rand_bottom(graphemes,numbers,bottom):
     '''
@@ -232,28 +233,34 @@ def rand_bottom(graphemes,numbers,bottom):
             bottom       :   bottom class
     '''
     # add line sections
-    bottom.font_size=random.choice(bottom.font_sizes_mid)
+    bottom.font_size=bottom.font_sizes_mid[0]
     bottom.sender_line.append({"line":rand_line(bottom,graphemes,numbers),"font_size":bottom.font_size})
     bottom.reciver_line.append({"line":rand_line(bottom,graphemes,numbers),"font_size":bottom.font_size})
+    bottom.num_word_max=5
+    bottom.num_word_max=3
     bottom.middle_line.append({"line":rand_line(bottom,graphemes,numbers),"font_size":bottom.font_size})
     
     return bottom
-# #--------------------
-# # placement-functions
-# #--------------------
-# def rand_hw_word(df,min_word_len,max_word_len):
-#     '''
-#         comps for handwritten word
-#     '''
-#     comps=[]
-#     len_word=random.randint(min_word_len,max_word_len)
-#     for _ in range(len_word):
-#         idx=random.randint(0,len(df)-1)
-#         comps.append(df.iloc[idx,1])
-#     return comps
+#--------------------
+# placement-functions
+#--------------------
+class Placement(object):
+    def __init__(self):
+        self.head_min        =2
+        self.min_word_len    =2
+        self.max_word_len    =5 
+        self.comp_dim        =64 
+        self.table_min       =3 
+        self.min_num_len     =2
+        self.max_num_len     =4 
 
-
-# if __name__=="__main__":
-#     graphemes =  list(string.ascii_lowercase)
-#     numbers   =  [str(i) for i in range(10)]
-#     #rand_bottom(graphemes,numbers,Bottom())    
+def rand_hw_word(df,min_word_len,max_word_len):
+    '''
+        comps for handwritten word
+    '''
+    comps=[]
+    len_word=random.randint(min_word_len,max_word_len)
+    for _ in range(len_word):
+        idx=random.randint(0,len(df)-1)
+        comps.append(df.iloc[idx,1])
+    return comps  

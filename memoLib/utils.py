@@ -124,7 +124,7 @@ def padToFixImgWidth(img,width):
                 img=np.concatenate([pad,img],axis=0)
     return img 
 #---------------------------------------------------------------
-def placeWordOnMask(word,labeled_img,region_value,mask,ext_reg=False,fill=False):
+def placeWordOnMask(word,labeled_img,region_value,mask,ext_reg=False,fill=False,ext=(0,10)):
     '''
         @author
         places a specific image on a given background at a specific location
@@ -146,8 +146,8 @@ def placeWordOnMask(word,labeled_img,region_value,mask,ext_reg=False,fill=False)
         h_reg = abs(y_max-y_min)
         w_reg = abs(x_max-x_min)
         # ext
-        h_ext=int((random.randint(0,20)*h_reg)/100)
-        w_ext=int((random.randint(0,20)*w_reg)/100)
+        h_ext=int((random.randint(ext[0],ext[1])*h_reg)/100)
+        w_ext=int((random.randint(ext[0],ext[1])*w_reg)/100)
         # region ext
         if y_min-h_ext>0:y_min-=h_ext # extend min height
         if y_max+h_ext<=h_li:y_max+=h_ext # extend max height

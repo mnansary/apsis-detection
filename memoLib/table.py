@@ -172,8 +172,9 @@ def tableTextRegions(mask, cell_widths):
 
     # store unique value Total box
     slt_total = [lst[len(lst)-2]]
-
     # store unique value for other columns
     slt_others = list(range(3,len_cell_widths+1))
-    
+    # gap
+    label_img[label_img==num_areas]=0
+    label_img[label_img==sorted(lst)[-3]]=0
     return {"serial":slt_serial, "brand":slt_brand,"total":slt_total,"others":slt_others},label_img
