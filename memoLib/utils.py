@@ -173,4 +173,8 @@ def placeWordOnMask(word,labeled_img,region_value,mask,ext_reg=False,fill=False,
     mask[y_min:y_max,x_min:x_max]=word
     return mask
 #---------------------------------------------------------------
-
+def randColor():
+    '''
+        generates random color
+    '''
+    return (random.randint(0,255),random.randint(0,255),random.randint(0,255))

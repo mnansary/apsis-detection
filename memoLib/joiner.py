@@ -20,14 +20,14 @@ import matplotlib.pyplot as plt
 
 from .render import renderMemoHead,renderMemoTable,renderMemoBottom
 from .word import createHandwritenWords
-from .utils import padToFixedHeightWidth, placeWordOnMask
+from .utils import padToFixedHeightWidth, placeWordOnMask,randColor
 from .memo import PAD, Placement,rand_hw_word
 
 #------------------------------------
 #  placement
 #-----------------------------------
 
-def memo_placement(ds,language,pad_dim=10):
+def create_memo_data(ds,language,pad_dim=10):
     '''
         joins a memo segments
     '''
@@ -73,7 +73,7 @@ def memo_placement(ds,language,pad_dim=10):
             comps=rand_hw_word(df,place.min_word_len,place.max_word_len)
         word=createHandwritenWords(df,comps,PAD,place.comp_dim)
         # words
-        head_hw=placeWordOnMask(word,head_reg,reg_val,head_hw,ext_reg=True,fill=False,ext=(30,50))
+        head_hw=placeWordOnMask(word,head_reg,reg_val,head_hw,ext_reg=True,fill=False,ext=(10,30))
     
     ## place table
     region_values=sorted(np.unique(table_reg))[1:]
@@ -102,7 +102,7 @@ def memo_placement(ds,language,pad_dim=10):
         word=255-word
         word[word>0]=1
         reg_val=region_values[i]
-        bottom_hw=placeWordOnMask(word,bottom_reg,reg_val,bottom_hw,ext_reg=True,fill=False,ext=(30,50))
+        bottom_hw=placeWordOnMask(word,bottom_reg,reg_val,bottom_hw,ext_reg=True,fill=False,ext=(10,30))
     
     # construct print img
     _,w_table=table_img.shape
@@ -111,62 +111,41 @@ def memo_placement(ds,language,pad_dim=10):
     max_w=max(w_table,w_head,w_bottoom)
 
     # head
-    head_img=padToFixedHeightWidth(head_img,head_img.shape[0]+2*pad_dim,max_w)
-    head_print=padToFixedHeightWidth(head_print,head_img.shape[0]+2*pad_dim,max_w)
-    head_hw=padToFixedHeightWidth(head_hw,head_img.shape[0]+2*pad_dim,max_w)
+    max_h=head_img.shape[0]+2*pad_dim
+    head_img=padToFixedHeightWidth(head_img,max_h,max_w)
+    head_print=padToFixedHeightWidth(head_print,max_h,max_w)
+    head_hw=padToFixedHeightWidth(head_hw,max_h,max_w)
     # bottom
-    bottom_img=padToFixedHeightWidth(bottom_img,bottom_img.shape[0]+2*pad_dim,max_w)
-    bottom_print=padToFixedHeightWidth(bottom_print,bottom_img.shape[0]+2*pad_dim,max_w)
-    bottom_hw=padToFixedHeightWidth(bottom_hw,bottom_img.shape[0]+2*pad_dim,max_w)
+    max_h=bottom_img.shape[0]+2*pad_dim
+    bottom_img=padToFixedHeightWidth(bottom_img,max_h,max_w)
+    bottom_print=padToFixedHeightWidth(bottom_print,max_h,max_w)
+    bottom_hw=padToFixedHeightWidth(bottom_hw,max_h,max_w)
     # table
-    table_img=padToFixedHeightWidth(table_img,table_img.shape[0]+2*pad_dim,max_w)
-    table_print=padToFixedHeightWidth(table_print,table_img.shape[0]+2*pad_dim,max_w)
-    table_hw=padToFixedHeightWidth(table_hw,table_img.shape[0]+2*pad_dim,max_w)
+    max_h=table_img.shape[0]+2*pad_dim
+    table_img=padToFixedHeightWidth(table_img,max_h,max_w)
+    table_print=padToFixedHeightWidth(table_print,max_h,max_w)
+    table_hw=padToFixedHeightWidth(table_hw,max_h,max_w)
     #
     memo_img=np.concatenate([head_img,table_img,bottom_img],axis=0)
     memo_raw_hw=np.concatenate([head_hw,table_hw,bottom_hw],axis=0)
-    #memo_img[memo_raw_hw==1]=2
     
-    memo_print=np.concatenate([head_print,table_print,np.zeros_like(bottom_img)],axis=0)
+    memo_print=np.concatenate([head_print,table_print,np.zeros_like(bottom_print)],axis=0)
     memo_hw=np.concatenate([head_hw,table_hw,np.zeros_like(bottom_hw)],axis=0)
     
-    plt.imshow(memo_img)
-    plt.show()
-    plt.imshow(memo_print)
-    plt.show()
-    plt.imshow(memo_hw)
-    plt.show()
-    plt.imshow(memo_raw_hw)
-    plt.show()
     
+    h,w=memo_img.shape
+    memo_img[memo_img>0]=255
+    memo_raw_hw[memo_raw_hw>0]=255
+    memo_hw[memo_hw>0]=255
+    memo_print[memo_print>0]=255
     
 
-    # # joining
-    # w_max=0
-    # padded_imgs=[]
-    # padded_prints=[]
-    # padded_hws=[]
-    # for img in [head_img,table_img,bottom_img]:
-    #     h,w=img.shape
-    #     if w>w_max:
-    #         w_max=w
-    # for idx,imgs in enumerate([[head_img,table_img,bottom_img],
-    #              [head_print,table_print,bottom_print],
-    #              [hw_mask_head,hw_mask_table,hw_mask_bottom]]):
-    #     for img in imgs:
-    #         h,w=img.shape
-    #         if w<w_max:
-    #             _pad=np.zeros((h,w_max-w))
-    #             if random.choice([0,1])==1:
-    #                 img=np.concatenate([img,_pad],axis=1)
-    #             else:
-    #                 img=np.concatenate([_pad,img],axis=1)
-    #         if idx==0:
-    #             padded_imgs.append(img)
-    #         if idx==1:
-    #             padded_prints.append(img)
-    #         else:
-    #             padded_hws.append(img)
-
-    # return np.concatenate(padded_imgs,axis=0),np.concatenate(padded_prints,axis=0),np.concatenate(padded_hws,axis=0)    
-                
+    memo_3=np.ones((h,w,3))*255
+    memo_3[memo_raw_hw>0]=(0,0,0)
+    if random.choice([1,0])==1:
+        col=randColor()
+    else:
+        col=(0,0,0)
+    memo_3[memo_img>0]=col
+    memo_3=memo_3.astype("uint8")
+    return memo_3,memo_print,memo_hw
