@@ -28,7 +28,6 @@ for i in tqdm(range(n_data)):
         # save
         cv2.imwrite(os.path.join(pr_dir,f"{i}.png"),pr)
         cv2.imwrite(os.path.join(hw_dir,f"{i}.png"),hw)
-        img = cv2.medianBlur(img,5)
         cv2.imwrite(os.path.join(img_dir,f"{i}.png"),img)
         
     except Exception as e:
