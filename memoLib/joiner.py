@@ -136,17 +136,19 @@ def create_memo_data(ds,language,pad_dim=10):
     h,w=memo_img.shape
     memo_img[memo_img>0]=255
     memo_raw_hw[memo_raw_hw>0]=255
-    memo_hw[memo_hw>0]=255
-    memo_print[memo_print>0]=255
     memo_table[memo_table>0]=255
+    
+    memo_data=memo_hw+memo_print
+    memo_data[memo_data>0]=255
     
     
     memo_3=np.ones((h,w,3))*255
     memo_3[memo_raw_hw>0]=(0,0,0)
-    if random.choice([1,0])==1:
-        col=randColor()
-    else:
-        col=(0,0,0)
+    # if random.choice([1,0,0,0,0,0])==1:
+    #     col=randColor()
+    # else:
+    #   col=(0,0,0)
+    col=(0,0,0)
     memo_3[memo_img>0]=col
     memo_3=memo_3.astype("uint8")
-    return memo_3,memo_print,memo_hw,memo_table
+    return memo_3,memo_data,memo_table
