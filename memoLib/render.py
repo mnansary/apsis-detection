@@ -270,7 +270,7 @@ def renderMemoTable(ds,language):
     # table_mask
     table_mask=createTable(len(prod_images)+1,len(header_images)+1,2,[img.shape[1] for img in header_images],cell_height)
     regions,region=tableTextRegions(table_mask,[img.shape[1] for img in header_images])
-
+    table_data=np.copy(table_mask)
     # region fillup 
     printed=np.zeros(table_mask.shape)
     # header regs
@@ -301,7 +301,7 @@ def renderMemoTable(ds,language):
     img=img+table_mask
     img[img>0]=1
     
-    return img,printed,region
+    return img,printed,region,table_data
             
 #----------------------------
 # render capacity: bottom 
