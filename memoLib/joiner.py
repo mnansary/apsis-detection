@@ -45,7 +45,7 @@ def create_memo_data(ds,language,pad_dim=10):
     noise_signs =  [img_path for img_path in glob(os.path.join(ds.common.noise.sign,"*.bmp"))]
     
     # extract images and regions
-    table_img,table_print,table_reg,table_data=   renderMemoTable(ds,language)
+    table_img,table_print,table_reg      =   renderMemoTable(ds,language)
     _,tbm=table_img.shape
     head_img,head_print,head_reg         =   renderMemoHead(ds,language,tbm)
     bottom_img,bottom_print,bottom_reg   =   renderMemoBottom(ds,language,tbm)
@@ -125,22 +125,22 @@ def create_memo_data(ds,language,pad_dim=10):
     table_img=padToFixedHeightWidth(table_img,max_h,max_w)
     table_print=padToFixedHeightWidth(table_print,max_h,max_w)
     table_hw=padToFixedHeightWidth(table_hw,max_h,max_w)
-    table_data=padToFixedHeightWidth(table_data,max_h,max_w)
     #
     memo_img=np.concatenate([head_img,table_img,bottom_img],axis=0)
     memo_raw_hw=np.concatenate([head_hw,table_hw,bottom_hw],axis=0)
     
     memo_print=np.concatenate([head_print,table_print,np.zeros_like(bottom_print)],axis=0)
     memo_hw=np.concatenate([head_hw,table_hw,np.zeros_like(bottom_hw)],axis=0)
-    table_data= np.concatenate([np.zeros_like(head_hw),table_data,np.zeros_like(bottom_hw)],axis=0)
-    
+    memo_table=np.concatenate([np.zeros_like(head_img),table_img+table_hw,np.zeros_like(bottom_img)],axis=0)
+
     h,w=memo_img.shape
     memo_img[memo_img>0]=255
     memo_raw_hw[memo_raw_hw>0]=255
     memo_hw[memo_hw>0]=255
     memo_print[memo_print>0]=255
-    table_data[table_data>0]=255
-
+    memo_table[memo_table>0]=255
+    
+    
     memo_3=np.ones((h,w,3))*255
     memo_3[memo_raw_hw>0]=(0,0,0)
     if random.choice([1,0])==1:
@@ -149,4 +149,4 @@ def create_memo_data(ds,language,pad_dim=10):
         col=(0,0,0)
     memo_3[memo_img>0]=col
     memo_3=memo_3.astype("uint8")
-    return memo_3,memo_print,memo_hw,table_data
+    return memo_3,memo_print,memo_hw,memo_table

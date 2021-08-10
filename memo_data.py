@@ -9,7 +9,7 @@ img_dir =create_dir(save_dir,"images")
 pr_dir =create_dir(save_dir,"prints")
 hw_dir =create_dir(save_dir,"hands")
 tb_dir =create_dir(save_dir,"table")
-n_data=10
+n_data=10000
 ds=DataSet(data_dir)
 
 
@@ -32,7 +32,7 @@ for i in tqdm(range(n_data)):
         cv2.imwrite(os.path.join(pr_dir,f"{i}.png"),pr)
         cv2.imwrite(os.path.join(hw_dir,f"{i}.png"),hw)
         # ksize
-        ksize = (3, 3)        
+        ksize = (5, 5)        
         # Using cv2.blur() method 
         img = cv2.blur(img, ksize)
         cv2.imwrite(os.path.join(img_dir,f"{i}.png"),img)
