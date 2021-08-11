@@ -10,19 +10,19 @@ import random
 data_dir= "/home/apsisdev/ansary/DATASETS/Detection/source/"
 save_dir="/home/apsisdev/ansary/DATASETS/Detection/"
 save_dir=create_dir(save_dir,"memo_table")
-save_dir=create_dir(save_dir,"noisey")
+save_dir=create_dir(save_dir,"highres")
 img_dir =create_dir(save_dir,"image")
 tmap_dir =create_dir(save_dir,"textmap")
 wmap_dir =create_dir(save_dir,"wordmap")
 cmap_dir =create_dir(save_dir,"charmap")
-n_data=1000
+n_data=2000
 ds=DataSet(data_dir)
 rand_noise =  [img_path for img_path in glob(os.path.join(ds.common.noise.random,"*.*"))]
     
 
 
 
-dim=(256,256)
+dim=(1024,1024)
 for i in tqdm(range(n_data)):
     try:
         lang=random.choice(["bangla","english"])
