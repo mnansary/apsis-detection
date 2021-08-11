@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 from glob import glob
 
 import PIL.Image,PIL.ImageDraw,PIL.ImageFont
+from numpy.core.fromnumeric import prod
 
 from .memo import Head,Table,Bottom,LineSection,LineWithExtension
 from .memo import rand_head,rand_products,rand_word,rand_bottom
@@ -202,20 +203,31 @@ def renderMemoTable(ds,language):
     h_max=0
     w_max=0
     prod_images=[]
+    prod_cmaps=[]
+    prod_wmaps=[]
     ## create line sections
     for line_data in table.products:
         assert len(line_data)==1
         data=line_data[0]
-        img=createPrintedLine(line=data["line"],font=maps[str(data["font_size"])])
+        img,cmap,wmap=createPrintedLine(text=data["line"],font=maps[str(data["font_size"])])
         h,w=img.shape
         if h>h_max:h_max=h
         if w>w_max:w_max=w
         # append
         prod_images.append(img)
+        prod_cmaps.append(cmap)
+        prod_wmaps.append(wmap)
+        
         
     
     prod_images=[padToFixedHeightWidth(line_img,h_max,w_max) for line_img in prod_images]
     prod_images=[padAllAround(line_img,table.pad_dim) for line_img in prod_images]
+    
+    prod_cmaps=[padToFixedHeightWidth(line_img,h_max,w_max) for line_img in prod_cmaps]
+    prod_cmaps=[padAllAround(line_img,table.pad_dim) for line_img in prod_cmaps]
+    
+    prod_wmaps=[padToFixedHeightWidth(line_img,h_max,w_max) for line_img in prod_wmaps]
+    prod_wmaps=[padAllAround(line_img,table.pad_dim) for line_img in prod_wmaps]
     
     # fixed for all of them now
     font_size   =   data["font_size"]
@@ -224,35 +236,51 @@ def renderMemoTable(ds,language):
     
     # fill headers
     header_images=[]
-    
+    header_wmaps=[]
+    header_cmaps=[]
     ##serial
     if language=="bangla":
         word=random.choice(table.serial["bn"])
     else:
         word=random.choice(table.serial["en"])
-    img=createPrintedLine(word,font=maps[str(font_size)])
+    img,cmap,wmap=createPrintedLine(word,font=maps[str(font_size)])
     header_images.append(padToFixedHeightWidth(img,cell_height,img.shape[1]+2*table.pad_dim))
+    header_cmaps.append(padToFixedHeightWidth(cmap,cell_height,img.shape[1]+2*table.pad_dim))
+    header_wmaps.append(padToFixedHeightWidth(wmap,cell_height,img.shape[1]+2*table.pad_dim))
     
     ##column headers
     for i in range(random.randint(table.num_extCOL_min,table.num_extCOL_max)):
         word=rand_word(graphemes,None,table.word_len_max,table.word_len_min)
-        img=createPrintedLine(word[:-1],font=maps[str(font_size)])
+        img,cmap,wmap=createPrintedLine(word[:-1],font=maps[str(font_size)])
         if i==0:
             # prod column
             img=padToFixedHeightWidth(img,cell_height,w_prod)
+            cmap=padToFixedHeightWidth(cmap,cell_height,w_prod)
+            wmap=padToFixedHeightWidth(wmap,cell_height,w_prod)
         else:
             img=padToFixedHeightWidth(img,cell_height,img.shape[1]+2*table.pad_dim)
+            cmap=padToFixedHeightWidth(cmap,cell_height,img.shape[1]+2*table.pad_dim)
+            wmap=padToFixedHeightWidth(wmap,cell_height,img.shape[1]+2*table.pad_dim)
+        
         header_images.append(img)
+        header_cmaps.append(cmap)
+        header_wmaps.append(wmap)
+        
         
 
     # fill total
     word=rand_word(graphemes,None,table.word_len_max,table.word_len_min)
-    img=createPrintedLine(word[:-1],font=maps[str(font_size)])
+    img,cmap,wmap=createPrintedLine(word[:-1],font=maps[str(font_size)])
     
     total_img=padToFixedHeightWidth(img,cell_height,img.shape[1]+2*table.pad_dim)
+    total_cmap=padToFixedHeightWidth(cmap,cell_height,img.shape[1]+2*table.pad_dim)
+    total_wmap=padToFixedHeightWidth(wmap,cell_height,img.shape[1]+2*table.pad_dim)
     
     # fill serial
     serial_images=[]
+    serial_cmaps=[]
+    serial_wmaps=[]
+    
     serial_width=header_images[0].shape[1]
     for i in range(len(prod_images)):
         sel_val=str(i+1)
@@ -260,8 +288,10 @@ def renderMemoTable(ds,language):
         if language=="bangla":
             word="".join([numbers[int(v)] for v in word])
         
-        img=createPrintedLine(word,font=maps[str(font_size)])
+        img,cmap,wmap=createPrintedLine(word,font=maps[str(font_size)])
         serial_images.append(padToFixedHeightWidth(img,cell_height,serial_width))    
+        serial_cmaps.append(padToFixedHeightWidth(cmap,cell_height,serial_width))    
+        serial_wmaps.append(padToFixedHeightWidth(wmap,cell_height,serial_width))    
     
 
 
@@ -271,26 +301,39 @@ def renderMemoTable(ds,language):
     regions,region=tableTextRegions(table_mask,[img.shape[1] for img in header_images])
     # region fillup 
     printed=np.zeros(table_mask.shape)
+    printed_cmap=np.zeros(table_mask.shape)
+    printed_wmap=np.zeros(table_mask.shape)
     # header regs
     #{"serial":slt_serial, "brand":slt_brand,"total":slt_total,"others":slt_others}
     header_regions=[regions["serial"][0]]+[regions["brand"][0]]+regions["others"]
-    for reg_val,word in zip(header_regions,header_images):
+    for reg_val,word,cmap,wmap in zip(header_regions,header_images,header_cmaps,header_wmaps):
         printed=placeWordOnMask(word,region,reg_val,printed,fill=True)
+        printed_cmap=placeWordOnMask(cmap,region,reg_val,printed_cmap,fill=True)
+        printed_wmap=placeWordOnMask(wmap,region,reg_val,printed_wmap,fill=True)
         region[region==reg_val]=0
 
     # total fillup
     printed=placeWordOnMask(total_img,region,regions["total"][0],printed,fill=True)
+    printed_cmap=placeWordOnMask(total_cmap,region,regions["total"][0],printed_cmap,fill=True)
+    printed_wmap=placeWordOnMask(total_wmap,region,regions["total"][0],printed_wmap,fill=True)
+    
     region[region==regions["total"][0]]=0
     # product fillup
     product_regions=regions["brand"][1:]
-    for reg_val,word in zip(product_regions,prod_images):
+    for reg_val,word,cmap,wmap in zip(product_regions,prod_images,prod_cmaps,prod_wmaps):
         printed=placeWordOnMask(word,region,reg_val,printed,fill=True)
+        printed_cmap=placeWordOnMask(cmap,region,reg_val,printed_cmap,fill=True)
+        printed_wmap=placeWordOnMask(wmap,region,reg_val,printed_wmap,fill=True)
+        
         region[region==reg_val]=0
     
     # serial fillup
     serial_regions=regions["serial"][1:]
-    for reg_val,word in zip(serial_regions,serial_images):
+    for reg_val,word,cmap,wmap in zip(serial_regions,serial_images,serial_cmaps,serial_wmaps):
         printed=placeWordOnMask(word,region,reg_val,printed,fill=True)
+        printed_cmap=placeWordOnMask(cmap,region,reg_val,printed_cmap,fill=True)
+        printed_wmap=placeWordOnMask(wmap,region,reg_val,printed_wmap,fill=True)
+        
         region[region==reg_val]=0
     
     img=np.copy(printed)
@@ -299,7 +342,7 @@ def renderMemoTable(ds,language):
     img=img+table_mask
     img[img>0]=1
     
-    return img,printed,region
+    return img,printed,region,printed_cmap,printed_wmap
             
 #----------------------------
 # render capacity: bottom 

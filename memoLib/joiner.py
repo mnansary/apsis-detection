@@ -150,3 +150,66 @@ def create_memo_data(ds,language,pad_dim=10):
     memo_3[memo_img>0]=col
     memo_3=memo_3.astype("uint8")
     return memo_3,memo_print,memo_hw,memo_table
+
+def create_table_data(ds,language,pad_dim=10):
+    '''
+        joins a memo segments
+    '''
+    # resource: can be more optimized 
+    if language=="bangla":
+        g_df     =ds.bangla.graphemes.df 
+        n_df     =ds.bangla.numbers.df 
+    else:
+        g_df     =ds.english.graphemes.df 
+        n_df     =ds.english.numbers.df 
+    sdf         =  ds.common.symbols.df
+    nsdf        =  pd.concat([n_df,sdf],ignore_index=True)
+    gsdf        =  pd.concat([g_df,sdf],ignore_index=True)
+    adf         =  pd.concat([n_df,g_df,sdf],ignore_index=True)
+    noise_signs =  [img_path for img_path in glob(os.path.join(ds.common.noise.sign,"*.bmp"))]
+    
+    # extract images and regions
+    table_img,table_print,table_reg,table_cmap,table_wmap      =   renderMemoTable(ds,language)
+    
+    
+
+    place=Placement()
+    ## place table
+    region_values=sorted(np.unique(table_reg))[1:]
+    region_values=[int(v) for v in region_values]
+    max_regs=len(region_values)
+    if max_regs<place.table_min:
+        place.table_min=max_regs
+    len_regs=random.randint(place.table_min,place.table_min*2)
+    
+    table_hw=np.zeros_like(table_reg)
+    for i in range(len_regs):
+        reg_val=random.choice(region_values)
+        region_values.remove(reg_val)
+        df=random.choice([n_df,nsdf])
+        comps=rand_hw_word(df,place.min_num_len,place.max_num_len)
+        word,cmap,wmap=createHandwritenWords(df,comps,PAD,place.comp_dim)
+        # words
+        table_hw=placeWordOnMask(word,table_reg,reg_val,table_hw,ext_reg=True,fill=True)
+        table_cmap=placeWordOnMask(cmap,table_reg,reg_val,table_cmap,ext_reg=True,fill=True)
+        table_wmap=placeWordOnMask(wmap,table_reg,reg_val,table_wmap,ext_reg=True,fill=True)
+    
+    h,w=table_img.shape
+    table_img[table_img>0]=255
+    table_hw[table_hw>0]=255
+    table_print[table_print>0]=255
+    
+    
+    table_3=np.ones((h,w,3))*255
+    table_3[table_hw>0]=(0,0,0)
+    if random.choice([1,0])==1:
+        col=randColor()
+    else:
+        col=(0,0,0)
+    table_3[table_img>0]=col
+    table_3=table_3.astype("uint8")
+    # table_data
+    table_data=table_hw+table_print
+    table_data[table_data>0]=255    
+
+    return table_3,table_data,table_cmap,table_wmap
