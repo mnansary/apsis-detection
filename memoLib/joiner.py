@@ -227,10 +227,8 @@ def create_table_data(ds,language,rand_noise,pad_dim=10):
     table_3[table_hw>0]=(0,0,0)
     table_3[noise_mask>0]=(0,0,0)
     
-    if random.choice([1,0])==1:
-        col=randColor()
-    else:
-        col=(0,0,0)
+ 
+    col=(0,0,0)
     table_3[table_img>0]=col
     table_3=table_3.astype("uint8")
     # table_data
