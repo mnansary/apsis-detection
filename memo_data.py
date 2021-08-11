@@ -1,6 +1,11 @@
 from memoLib.dataset import DataSet
 from memoLib.utils import create_dir,LOG_INFO
 from memoLib.joiner import create_table_data
+from tqdm.auto import tqdm
+from glob import glob
+import os
+import cv2
+import random
 
 data_dir= "/home/apsisdev/ansary/DATASETS/Detection/source/"
 save_dir="/home/apsisdev/ansary/DATASETS/Detection/"
@@ -12,18 +17,16 @@ wmap_dir =create_dir(save_dir,"wordmap")
 cmap_dir =create_dir(save_dir,"charmap")
 n_data=1000
 ds=DataSet(data_dir)
+rand_noise =  [img_path for img_path in glob(os.path.join(ds.common.noise.random,"*.*"))]
+    
 
 
 
-from tqdm.auto import tqdm
-import os
-import cv2
-import random
 dim=(256,256)
 for i in tqdm(range(n_data)):
     try:
         lang=random.choice(["bangla","english"])
-        img,tmap,cmap,wmap=create_table_data(ds,lang)
+        img,tmap,cmap,wmap=create_table_data(ds,lang,rand_noise)
         img=cv2.resize(img,dim)
         tmap=cv2.resize(tmap,dim,fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
         cmap=cv2.resize(cmap,dim,fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
