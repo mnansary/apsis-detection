@@ -146,9 +146,14 @@ def placeWordOnMask(word,labeled_img,region_value,mask,ext_reg=False,fill=False,
         h_li,w_li=labeled_img.shape
         h_reg = abs(y_max-y_min)
         w_reg = abs(x_max-x_min)
-        # ext
-        h_ext=int((random.randint(ext[0],ext[1])*h_reg)/100)
-        w_ext=int((random.randint(ext[0],ext[1])*w_reg)/100)
+        if type(ext)==int:
+            # ext
+            h_ext=int((ext*h_reg)/100)
+            w_ext=int((ext*w_reg)/100)
+        else:        
+            # ext
+            h_ext=int((random.randint(ext[0],ext[1])*h_reg)/100)
+            w_ext=int((random.randint(ext[0],ext[1])*w_reg)/100)
         # region ext
         if y_min-h_ext>0:y_min-=h_ext # extend min height
         if y_max+h_ext<=h_li:y_max+=h_ext # extend max height

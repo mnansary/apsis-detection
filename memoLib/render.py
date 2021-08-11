@@ -298,7 +298,16 @@ def renderMemoTable(ds,language):
 
     # table_mask
     table_mask=createTable(len(prod_images)+1,len(header_images)+1,2,[img.shape[1] for img in header_images],cell_height)
+    
     regions,region=tableTextRegions(table_mask,[img.shape[1] for img in header_images])
+    
+    # dilate table
+    table_mask=255-table_mask
+    ksize=random.randint(3,10)
+    kernel = np.ones((ksize,ksize), np.uint8)
+    table_mask= cv2.dilate(table_mask, kernel, iterations=1)
+    table_mask=255-table_mask
+    
     # region fillup 
     printed=np.zeros(table_mask.shape)
     printed_cmap=np.zeros(table_mask.shape)
@@ -337,6 +346,7 @@ def renderMemoTable(ds,language):
         region[region==reg_val]=0
     
     img=np.copy(printed)
+
     table_mask[table_mask>0]=1
     table_mask=1-table_mask
     img=img+table_mask

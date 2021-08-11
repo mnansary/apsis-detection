@@ -253,6 +253,10 @@ class Placement(object):
         self.table_min       =3 
         self.min_num_len     =2
         self.max_num_len     =4 
+        self.max_rot         = 45
+        self.min_rot         = 5
+        self.rot_weights     = [0.3,0.7]
+        
 
 def rand_hw_word(df,min_word_len,max_word_len):
     '''

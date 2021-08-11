@@ -18,9 +18,9 @@ from glob import glob
 import PIL.Image,PIL.ImageDraw,PIL.ImageFont
 import matplotlib.pyplot as plt 
 
-from .render import renderMemoHead,renderMemoTable,renderMemoBottom
+from .render import renderMemoTable#,renderMemoHead,renderMemoBottom
 from .word import createHandwritenWords
-from .utils import padToFixedHeightWidth, placeWordOnMask,randColor
+from .utils import padToFixedHeightWidth, placeWordOnMask,randColor,rotate_image
 from .memo import PAD, Placement,rand_hw_word
 
 #------------------------------------
@@ -191,10 +191,19 @@ def create_table_data(ds,language,pad_dim=10):
         df=random.choice([n_df,nsdf])
         comps=rand_hw_word(df,place.min_num_len,place.max_num_len)
         word,cmap,wmap=createHandwritenWords(df,comps,PAD,place.comp_dim)
+        
+        if random.choices(population=[1,0],weights=place.rot_weights,k=1)[0]==1:
+            angle=random.randint(place.min_rot,place.max_rot)
+            angle=random.choice([angle,-1*angle])
+            word=rotate_image(word,angle)
+            wmap=rotate_image(wmap,angle)
+            cmap=rotate_image(cmap,angle)
+            
+        ext=random.randint(0,30)
         # words
-        table_hw=placeWordOnMask(word,table_reg,reg_val,table_hw,ext_reg=True,fill=True)
-        table_cmap=placeWordOnMask(cmap,table_reg,reg_val,table_cmap,ext_reg=True,fill=True)
-        table_wmap=placeWordOnMask(wmap,table_reg,reg_val,table_wmap,ext_reg=True,fill=True)
+        table_hw=placeWordOnMask(word,table_reg,reg_val,table_hw,ext_reg=True,fill=True,ext=ext)
+        table_cmap=placeWordOnMask(cmap,table_reg,reg_val,table_cmap,ext_reg=True,fill=True,ext=ext)
+        table_wmap=placeWordOnMask(wmap,table_reg,reg_val,table_wmap,ext_reg=True,fill=True,ext=ext)
     
     h,w=table_img.shape
     table_img[table_img>0]=255
