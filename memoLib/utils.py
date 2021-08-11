@@ -300,3 +300,29 @@ def rotate_image(mat, angle):
     # rotate image with the new bounds and translated rotation matrix
     rotated_mat = cv2.warpAffine(mat, rotation_mat, (bound_w, bound_h),flags=cv2.INTER_NEAREST)
     return rotated_mat
+
+#---------------------------------------------------------------
+def draw_random_noise(bin_img,bin_val,img,ntype="line"):
+    '''
+        draws random poly
+    '''
+    y_idx, x_idx = np.where(bin_img==bin_val)   
+    h,w,d=img.shape
+    min_dim=min(h,w)
+
+    num_points=random.randint(min_dim//8,min_dim//4)
+    rand_idx1 = random.choice(y_idx)   #randomly choose any element in the x_idx list
+    x1 = x_idx[rand_idx1]
+    y1 = y_idx[rand_idx1] 
+    for i in range(0,num_points):
+        x2 = x1+random.randint(-10,10)
+        if ntype=="line":
+            y2 = y1+random.randint(5,10)
+        else:
+            y2 = y1+random.randint(-10,10)
+        cv2.line(img,(x1,y1),(x2,y2),(0,0,0),random.randint(2,5))
+        x1=x2
+        y1=y2 
+            
+    return img
+

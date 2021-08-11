@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 
 from .render import renderMemoTable#,renderMemoHead,renderMemoBottom
 from .word import createHandwritenWords
-from .utils import padToFixedHeightWidth, placeWordOnMask,randColor,rotate_image
+from .utils import padToFixedHeightWidth, placeWordOnMask,randColor,rotate_image,draw_random_noise
 from .memo import PAD, Placement,rand_hw_word
 
 #------------------------------------
@@ -153,7 +153,7 @@ from .memo import PAD, Placement,rand_hw_word
 #     memo_3=memo_3.astype("uint8")
 #     return memo_3,memo_print,memo_hw,memo_table
 
-def create_table_data(ds,language,rand_noise,pad_dim=10):
+def create_table_data(ds,language,pad_dim=10):
     '''
         joins a memo segments
     '''
@@ -205,19 +205,11 @@ def create_table_data(ds,language,rand_noise,pad_dim=10):
         table_cmap=placeWordOnMask(cmap,table_reg,reg_val,table_cmap,ext_reg=True,fill=True,ext=ext)
         table_wmap=placeWordOnMask(wmap,table_reg,reg_val,table_wmap,ext_reg=True,fill=True,ext=ext)
     
-    # add noise
-    num_noise  =  random.randint(0,place.max_noise)
-    noise_mask =  np.zeros_like(table_reg)
-    if num_noise>0:
-        for i in range(num_noise):
-            word=cv2.imread(random.choice(rand_noise),0)
-            word=255-word
-            word[word>0]=1
-            reg_val=random.choice(region_values)
-            noise_mask=placeWordOnMask(word,table_reg,reg_val,noise_mask,ext_reg=True,fill=True,ext=(10,20))
     
+    
+
     h,w=table_img.shape
-    table_img+=noise_mask
+    #table_img+=noise_mask
     table_img[table_img>0]=255
     table_hw[table_hw>0]=255
     table_print[table_print>0]=255
@@ -225,14 +217,26 @@ def create_table_data(ds,language,rand_noise,pad_dim=10):
     
     table_3=np.ones((h,w,3))*255
     table_3[table_hw>0]=(0,0,0)
-    table_3[noise_mask>0]=(0,0,0)
+    #table_3[noise_mask>0]=(0,0,0)
     
  
     col=(0,0,0)
     table_3[table_img>0]=col
     table_3=table_3.astype("uint8")
+    # add noise
+    num_noise  =  random.randint(4,10)
+    for _ in range(num_noise):
+        if random.choice([0,1])==1:
+            reg_val=random.choice(region_values)
+            table_3=draw_random_noise(table_reg,reg_val,table_3,ntype="line")
+        else:
+            reg_val=random.choice(region_values)
+            table_3=draw_random_noise(table_print,0,table_3,ntype="non-line")
+            
+
+    
     # table_data
     table_data=table_hw+table_print
     table_data[table_data>0]=255    
 
-    return table_3,table_data,table_cmap,table_wmap
+    return table_3,table_data,table_cmap,table_wmap,table_hw
