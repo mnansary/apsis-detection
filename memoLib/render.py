@@ -14,7 +14,6 @@ import matplotlib.pyplot as plt
 from glob import glob
 
 import PIL.Image,PIL.ImageDraw,PIL.ImageFont
-from numpy.lib.arraypad import pad
 
 from .memo import Head,Table,Bottom,LineSection,LineWithExtension
 from .memo import rand_head,rand_products,rand_word,rand_bottom
