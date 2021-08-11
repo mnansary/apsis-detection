@@ -31,7 +31,7 @@ for i in tqdm(range(n_data)):
         # save
         cv2.imwrite(os.path.join(tmap_dir,f"{i}.png"),tmap)
         cv2.imwrite(os.path.join(cmap_dir,f"{i}.png"),cmap)
-        cv2.imwrite(os.path.join(wmap,f"{i}.png"),wmap)
+        cv2.imwrite(os.path.join(wmap_dir,f"{i}.png"),wmap)
         
         # ksize
         ksize = (3, 3)        
