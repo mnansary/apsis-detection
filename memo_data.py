@@ -10,7 +10,7 @@ import random
 data_dir= "/home/apsisdev/ansary/DATASETS/Detection/source/"
 save_dir="/home/apsisdev/ansary/DATASETS/Detection/"
 save_dir=create_dir(save_dir,"memo_table")
-save_dir=create_dir(save_dir,"base")
+save_dir=create_dir(save_dir,"noisey")
 img_dir =create_dir(save_dir,"image")
 tmap_dir =create_dir(save_dir,"textmap")
 wmap_dir =create_dir(save_dir,"wordmap")
