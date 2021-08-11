@@ -18,7 +18,7 @@ cmap_dir =create_dir(save_dir,"charmap")
 n_data=2000
 ds=DataSet(data_dir)
 rand_noise =  [img_path for img_path in glob(os.path.join(ds.common.noise.random,"*.*"))]
-    
+LOG_INFO(save_dir)
 
 
 

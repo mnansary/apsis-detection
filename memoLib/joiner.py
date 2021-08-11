@@ -239,4 +239,4 @@ def create_table_data(ds,language,pad_dim=10):
     table_data=table_hw+table_print
     table_data[table_data>0]=255    
 
-    return table_3,table_data,table_cmap,table_wmap,table_hw
+    return table_3,table_data,table_cmap,table_wmap
