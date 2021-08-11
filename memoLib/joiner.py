@@ -151,7 +151,6 @@ def create_memo_data(ds,language,pad_dim=10):
     col=(0,0,0)
     memo_3[memo_img>0]=col
     memo_3=memo_3.astype("uint8")
-<<<<<<< HEAD
     return memo_3,memo_print,memo_hw,memo_table
 
 def create_table_data(ds,language,pad_dim=10):
@@ -216,6 +215,3 @@ def create_table_data(ds,language,pad_dim=10):
     table_data[table_data>0]=255    
 
     return table_3,table_data,table_cmap,table_wmap
-=======
-    return memo_3,memo_data,memo_table
->>>>>>> 2d104cb57864914bebe428a5d8c42c1d8bb4b03a
