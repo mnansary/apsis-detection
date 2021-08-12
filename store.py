@@ -54,7 +54,6 @@ def to_tfrecord(image_paths,save_dir,r_num):
     with tf.io.TFRecordWriter(tfrecord_path) as writer:    
         for image_path in image_paths:
             
-            text_path=str(image_path).replace('image','textmap')
             char_path=str(image_path).replace('image','charmap')
             word_path=str(image_path).replace('image','wordmap')
             #image
@@ -68,15 +67,11 @@ def to_tfrecord(image_paths,save_dir,r_num):
             with(open(word_path,'rb')) as fid:
                 word_bytes=fid.read()
             
-            # text
-            with(open(text_path,'rb')) as fid:
-                text_bytes=fid.read()
             
             
             data ={ 'image':_bytes_feature(image_bytes),
                     'charmap':_bytes_feature(char_bytes),
-                    'wordmap':_bytes_feature(word_bytes),
-                    'textmap':_bytes_feature(text_bytes)
+                    'wordmap':_bytes_feature(word_bytes)
             }
             
             
