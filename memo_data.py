@@ -26,6 +26,9 @@ for i in tqdm(range(n_data)):
         lang=random.choice(["bangla","english"])
         img,cmap,wmap=create_table_data(ds,lang,random.choice(ds.style_paths))
         img=cv2.resize(img,dim)
+        img=cv2.resize(img,(dim[0]//2,dim[1]//2))
+        img=cv2.resize(img,dim)
+        
         cmap=cv2.resize(cmap,dim,fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
         wmap=cv2.resize(wmap,dim,fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
         # save
