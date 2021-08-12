@@ -11,7 +11,7 @@ import cv2
 import os
 import cv2
 import string
-from numpy.lib.function_base import place
+
 import pandas as pd
 from glob import glob
 
@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 
 from .render import renderMemoTable#,renderMemoHead,renderMemoBottom
 from .word import createHandwritenWords
-from .utils import padToFixedHeightWidth, placeWordOnMask,randColor,rotate_image,draw_random_noise
+from .utils import padToFixedHeightWidth, placeWordOnMask,randColor,rotate_image,draw_random_noise,cleanImage
 from .memo import PAD, Placement,rand_hw_word
 
 #------------------------------------
@@ -153,7 +153,7 @@ from .memo import PAD, Placement,rand_hw_word
 #     memo_3=memo_3.astype("uint8")
 #     return memo_3,memo_print,memo_hw,memo_table
 
-def create_table_data(ds,language,pad_dim=10):
+def create_table_data(ds,language,style_img,pad_dim=10):
     '''
         joins a memo segments
     '''
@@ -170,6 +170,8 @@ def create_table_data(ds,language,pad_dim=10):
     adf         =  pd.concat([n_df,g_df,sdf],ignore_index=True)
     noise_signs =  [img_path for img_path in glob(os.path.join(ds.common.noise.sign,"*.bmp"))]
     
+    
+
     # extract images and regions
     table_img,table_print,table_reg,table_cmap,table_wmap      =   renderMemoTable(ds,language)
     
@@ -200,10 +202,11 @@ def create_table_data(ds,language,pad_dim=10):
             cmap=rotate_image(cmap,angle)
             
         ext=random.randint(0,30)
+        ext_reg=random.choice([True,False])
         # words
-        table_hw=placeWordOnMask(word,table_reg,reg_val,table_hw,ext_reg=True,fill=True,ext=ext)
-        table_cmap=placeWordOnMask(cmap,table_reg,reg_val,table_cmap,ext_reg=True,fill=True,ext=ext)
-        table_wmap=placeWordOnMask(wmap,table_reg,reg_val,table_wmap,ext_reg=True,fill=True,ext=ext)
+        table_hw=placeWordOnMask(word,table_reg,reg_val,table_hw,ext_reg=ext_reg,fill=True,ext=ext)
+        table_cmap=placeWordOnMask(cmap,table_reg,reg_val,table_cmap,ext_reg=ext_reg,fill=True,ext=ext)
+        table_wmap=placeWordOnMask(wmap,table_reg,reg_val,table_wmap,ext_reg=ext_reg,fill=True,ext=ext)
     
     
     
@@ -214,29 +217,39 @@ def create_table_data(ds,language,pad_dim=10):
     table_hw[table_hw>0]=255
     table_print[table_print>0]=255
     
+
+    # styling
+    style_img=cv2.imread(style_img)
+    style_img=cv2.resize(style_img,(table_img.shape[1],table_img.shape[0]))
+    style_noise=cleanImage(style_img)
+    style_noise=255-style_noise
+    style_copy=np.copy(style_img)
+    style_copy[style_noise>0]=style_img[np.where(style_noise==0)].mean(axis=0)
+    style_back=cv2.blur(style_copy,(128,128))
+
     
     table_3=np.ones((h,w,3))*255
     table_3[table_hw>0]=(0,0,0)
-    #table_3[noise_mask>0]=(0,0,0)
     
  
-    col=(0,0,0)
-    table_3[table_img>0]=col
+    # back handling
+    table_3[table_img==0]=style_back[table_img==0]
+    # print handling
+    table_3[np.where(table_img==255)]=style_img[np.where(style_noise==255)].mean(axis=0)
+    # hw handling
+    table_3[table_hw>0]=style_img[np.where(style_noise==255)].min(axis=0)
+    
     table_3=table_3.astype("uint8")
     # add noise
-    num_noise  =  random.randint(4,10)
+    num_noise  =  random.randint(1,5)
     for _ in range(num_noise):
-        if random.choice([0,1])==1:
-            reg_val=random.choice(region_values)
-            table_3=draw_random_noise(table_reg,reg_val,table_3,ntype="line")
-        else:
-            reg_val=random.choice(region_values)
-            table_3=draw_random_noise(table_print,0,table_3,ntype="non-line")
-            
+        reg_val=random.choice(region_values)
+        table_3=draw_random_noise(table_reg,reg_val,table_3)
+        
 
     
-    # table_data
-    table_data=table_hw+table_print
-    table_data[table_data>0]=255    
+    # # table_data
+    # table_data=table_hw+table_print
+    # table_data[table_data>0]=255    
 
-    return table_3,table_data,table_cmap,table_wmap
+    return table_3,table_cmap,table_wmap

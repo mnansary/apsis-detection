@@ -17,7 +17,7 @@ import pandas as pd
 from .utils import stripPads,GraphemeParser,gaussian_heatmap
 GP=GraphemeParser()
 heatmap=gaussian_heatmap(size=128,distanceRatio=3)
-heatword=gaussian_heatmap(size=128,distanceRatio=2)
+heatword=gaussian_heatmap(size=128,distanceRatio=1.5)
 #-----------------------------------
 # line image
 #----------------------------------
@@ -71,9 +71,10 @@ def createPrintedLine(text,font):
             curr_width+=space_width
             
         comps=GP.word2grapheme(word)
-        word_map=cv2.resize(heatword,(width,img_h),fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
         char_map=np.concatenate([heatmap for _ in comps],axis=1)
         char_map=cv2.resize(char_map,(width,img_h),fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
+        word_map=np.concatenate([heatword for _ in comps],axis=1)
+        word_map=cv2.resize(word_map,(width,img_h),fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
         
         if idx>0:
             spad=np.zeros((img_h,curr_width-width))
@@ -146,6 +147,7 @@ def createHandwritenWords(df,
 
     imgs=[]
     char_maps=[]
+    word_maps=[]
     for cidx,comp in enumerate(comps):
         c_df=df.loc[df.label==comp]
         # select a image file
@@ -155,31 +157,40 @@ def createHandwritenWords(df,
         img=cv2.imread(img_path,0)
         h,w=img.shape
         char_map=cv2.resize(heatmap,(w,h),fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
+        word_map=cv2.resize(heatword,(w,h),fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
 
         # resize
         hf=comp_heights[cidx]
         if hf=="":
             img=cv2.resize(img,pad.no_pad_dim,fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
             char_map=cv2.resize(char_map,pad.no_pad_dim,fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
+            word_map=cv2.resize(word_map,pad.no_pad_dim,fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
+            
             if tp:
                 h,w=img.shape
                 top=np.ones((pad.height,w))*255
                 img=np.concatenate([top,img],axis=0)
                 char_map=np.concatenate([top,char_map],axis=0)
+                word_map=np.concatenate([top,word_map],axis=0)
+                
             if bp:
                 h,w=img.shape
                 bot=np.ones((pad.height,w))*255
                 img=np.concatenate([img,bot],axis=0)
                 char_map=np.concatenate([char_map,bot],axis=0)
+                word_map=np.concatenate([word_map,bot],axis=0)
                 
         elif hf=="t":
             img=cv2.resize(img,pad.single_pad_dim,fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
             char_map=cv2.resize(char_map,pad.single_pad_dim,fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
+            word_map=cv2.resize(word_map,pad.single_pad_dim,fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
+            
             if bp:
                 h,w=img.shape
                 bot=np.ones((pad.height,w))*255
                 img=np.concatenate([img,bot],axis=0)
                 char_map=np.concatenate([char_map,bot],axis=0)
+                word_map=np.concatenate([word_map,bot],axis=0)
 
         elif hf=="b":
             img=cv2.resize(img,pad.single_pad_dim,fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
@@ -189,10 +200,14 @@ def createHandwritenWords(df,
                 top=np.ones((pad.height,w))*255
                 img=np.concatenate([top,img],axis=0)
                 char_map=np.concatenate([top,char_map],axis=0)
+                word_map=np.concatenate([top,word_map],axis=0)
+                
                 
         elif hf=="bt" or hf=="tb":
             img=cv2.resize(img,pad.double_pad_dim,fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
             char_map=cv2.resize(char_map,pad.double_pad_dim,fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
+            word_map=cv2.resize(word_map,pad.double_pad_dim,fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
+            
         
         
         
@@ -202,13 +217,14 @@ def createHandwritenWords(df,
         img[img>0]=1
         imgs.append(img)
         char_maps.append(char_map)
+        word_maps.append(word_map)
 
     img=np.concatenate(imgs,axis=1)
     char_map=np.concatenate(char_maps,axis=1)
-
+    word_map=np.concatenate(word_maps,axis=1)
     h,w=img.shape 
     width= int(height* w/h) 
     img=cv2.resize(img,(width,height),fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
     char_map=cv2.resize(char_map,(width,height),fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
-    word_map=cv2.resize(heatword,(width,height),fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
+    word_map=cv2.resize(word_map,(width,height),fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
     return img,char_map,word_map

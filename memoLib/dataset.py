@@ -80,6 +80,7 @@ class DataSet(object):
         self.bangla  = bangla
         self.english = english
         self.common  = common
+        self.style_paths=[_path for _path in tqdm(glob(os.path.join(data_dir,"styles")))]
         # error check
         self.__checkExistance()
 

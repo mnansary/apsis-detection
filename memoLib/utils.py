@@ -302,7 +302,7 @@ def rotate_image(mat, angle):
     return rotated_mat
 
 #---------------------------------------------------------------
-def draw_random_noise(bin_img,bin_val,img,ntype="line"):
+def draw_random_noise(bin_img,bin_val,img):
     '''
         draws random poly
     '''
@@ -310,19 +310,46 @@ def draw_random_noise(bin_img,bin_val,img,ntype="line"):
     h,w,d=img.shape
     min_dim=min(h,w)
 
-    num_points=random.randint(min_dim//8,min_dim//4)
+    num_points=random.randint(min_dim//10,min_dim//5)
     rand_idx1 = random.choice(y_idx)   #randomly choose any element in the x_idx list
     x1 = x_idx[rand_idx1]
     y1 = y_idx[rand_idx1] 
     for i in range(0,num_points):
         x2 = x1+random.randint(-10,10)
-        if ntype=="line":
-            y2 = y1+random.randint(5,10)
-        else:
-            y2 = y1+random.randint(-10,10)
-        cv2.line(img,(x1,y1),(x2,y2),(0,0,0),random.randint(2,5))
+        y2 = y1+random.randint(5,30)
+        cv2.line(img,(x1,y1),(x2,y2),(0,0,0),random.randint(2,10))
         x1=x2
         y1=y2 
             
     return img
+#---------------------------------------------------------------
+def cleanImage(img,rgb=False):
+    '''
+    removes shadows and thresholds
+    '''
 
+    result_norm_planes = []
+    # split rgb
+    rgb_planes = cv2.split(img)
+    # clean planes
+    for plane in rgb_planes:
+        # dilate
+        dilated_img = cv2.dilate(plane, np.ones((7,7), np.uint8))
+        # background
+        bg_img = cv2.medianBlur(dilated_img, 21)
+        # difference
+        diff_img = 255 - cv2.absdiff(plane, bg_img)
+        # normalized
+        norm_img = cv2.normalize(diff_img,None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8UC1)
+        # append
+        result_norm_planes.append(norm_img)
+    # merge rgb
+    img = cv2.merge(result_norm_planes)
+    if rgb:
+        return img
+    # grayscale
+    img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # threshold
+    blur = cv2.GaussianBlur(img_gray,(5,5),0)
+    _,img = cv2.threshold(blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    return img
