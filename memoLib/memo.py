@@ -28,7 +28,7 @@ class LineSection(object):
         self.vocabs       =   ["mixed","number","grapheme"]
         self.vweights     =   [0.1,0.1,0.8]
         self.max_syms     =   1
-        self.font_sizes_big   =   [128,112,96]
+        self.font_sizes_big   =   [128,112,96,80]
         self.font_sizes_mid   =   [80,64]
                                         
 
@@ -146,7 +146,7 @@ def rand_head(graphemes,numbers,head,line_section,line_ext):
     
     
     
-    font_size=random.choice(line_ext.font_sizes_mid)
+    font_size=line_ext.font_sizes_big[-1]
     # add double ext sections
     num_double_sections=random.randint(head.min_double_exts,head.max_double_exts)
     for _ in range(num_double_sections):

@@ -53,26 +53,34 @@ def padToFixedHeightWidth(img,h_max,w_max):
     '''
     # shape
     h,w=img.shape
-    # pad widths
-    left_pad_width =(w_max-w)//2
-    # print(left_pad_width)
-    right_pad_width=w_max-w-left_pad_width
-    # pads
-    left_pad =np.zeros((h,left_pad_width))
-    right_pad=np.zeros((h,right_pad_width))
-    # pad
-    img =np.concatenate([left_pad,img,right_pad],axis=1)
-    
+    if w<w_max:
+        # pad widths
+        left_pad_width =(w_max-w)//2
+        # print(left_pad_width)
+        right_pad_width=w_max-w-left_pad_width
+        # pads
+        left_pad =np.zeros((h,left_pad_width))
+        right_pad=np.zeros((h,right_pad_width))
+        # pad
+        img =np.concatenate([left_pad,img,right_pad],axis=1)
+    elif w>w_max: # reduce height
+        h_new=int(w_max*h/w)
+        img = cv2.resize(img, (w_max,h_new), fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
     # shape
     h,w=img.shape
-    # pad heights
-    top_pad_height =(h_max-h)//2
-    bot_pad_height=h_max-h-top_pad_height
-    # pads
-    top_pad =np.zeros((top_pad_height,w))
-    bot_pad=np.zeros((bot_pad_height,w))
-    # pad
-    img =np.concatenate([top_pad,img,bot_pad],axis=0)
+    if h<h_max:    
+        # pad heights
+        top_pad_height =(h_max-h)//2
+        bot_pad_height=h_max-h-top_pad_height
+        # pads
+        top_pad =np.zeros((top_pad_height,w))
+        bot_pad=np.zeros((bot_pad_height,w))
+        # pad
+        img =np.concatenate([top_pad,img,bot_pad],axis=0)
+    elif h>h_max:
+        w_new=int(h_max*w/h)
+        img = cv2.resize(img, (w_new,h_max), fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
+    img = cv2.resize(img, (w_max,h_max), fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
     return img
 
 def padAllAround(img,pad_dim):
@@ -93,39 +101,8 @@ def padAllAround(img,pad_dim):
     img =np.concatenate([top_pad,img,bot_pad],axis=0)
     return img
 
-def padToFixImgWidth(img,width):
-    '''
-        fix image based purely by width
-    '''
-    h,w=img.shape
-    # case 1: w< width
-    if w<width:
-        pad_w=width-w
-        if pad_w%2==0:
-            pad =np.zeros((h,pad_w//2))
-            img=np.concatenate([pad,img,pad],axis=1)
-        else:
-            pad=np.zeros((h,pad_w))
-            if random.choice([1,0])==1:
-                img=np.concatenate([img,pad],axis=1)
-            else:
-                img=np.concatenate([pad,img],axis=1)
-    else:
-        h_needed=int(width* h/w) 
-        img = cv2.resize(img, (width,h_needed), fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
-        pad_h=h-h_needed
-        if pad_h%2==0:
-            pad =np.zeros((pad_h//2,width))
-            img=np.concatenate([pad,img,pad],axis=0)
-        else:
-            pad=np.zeros((pad_h,width))
-            if random.choice([1,0])==1:
-                img=np.concatenate([img,pad],axis=0)
-            else:
-                img=np.concatenate([pad,img],axis=0)
-    return img 
 #---------------------------------------------------------------
-def placeWordOnMask(word,labeled_img,region_value,mask,ext_reg=False,fill=False,ext=(0,10)):
+def placeWordOnMask(word,labeled_img,region_value,mask_ref,ext_reg=False,fill=False,ext=(0,10)):
     '''
         @author
         places a specific image on a given background at a specific location
@@ -139,6 +116,7 @@ def placeWordOnMask(word,labeled_img,region_value,mask,ext_reg=False,fill=False,
         return:
             mak :   mask image after placing 'img'
     '''
+    mask=np.zeros_like(mask_ref)
     idx=np.where(labeled_img==region_value)
     # region
     y_min,y_max,x_min,x_max = np.min(idx[0]), np.max(idx[0]), np.min(idx[1]), np.max(idx[1])
@@ -174,7 +152,7 @@ def placeWordOnMask(word,labeled_img,region_value,mask,ext_reg=False,fill=False,
         w_needed=int(h_max* w/h) 
         word = cv2.resize(word, (w_needed,h_max), fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
         # fix padding
-        word=padToFixImgWidth(word,w_max)    
+        word=padToFixedHeightWidth(word,h_max,w_max)    
     # place on mask
     mask[y_min:y_max,x_min:x_max]=word
     return mask

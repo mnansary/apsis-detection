@@ -1,10 +1,11 @@
 # -*-coding: utf-8 -
 '''
-    @author: MD. Nazmuddoha Ansary
+    @author: MD. Nazmuddoha Ansary,MD. Mobassir Hossain
 '''
 #--------------------
 # imports
 #--------------------
+from numpy.core.numeric import zeros_like
 import regex 
 import numpy as np 
 import cv2
@@ -16,7 +17,7 @@ import pandas as pd
 
 from .utils import stripPads,GraphemeParser,gaussian_heatmap
 GP=GraphemeParser()
-heatmap=gaussian_heatmap(size=512,distanceRatio=1.5)
+heatmap=gaussian_heatmap(size=512,distanceRatio=2.5)
 #-----------------------------------
 # line image
 #----------------------------------
@@ -103,10 +104,14 @@ def createPrintedLine(text,font):
         word_map=np.concatenate([word_maps[idx],pad],axis=1)
         word_maps[idx]=word_map
         
+    height,width=img.shape
+
     char_map=sum(char_maps)
     word_map=sum(word_maps)
-    return img,char_map,word_map
+    char_map=cv2.resize(char_map,(width,height),fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
+    word_map=cv2.resize(word_map,(width,height),fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
 
+    return img,char_map,word_map
 
     
 #-----------------------------------
@@ -178,13 +183,13 @@ def createHandwritenWords(df,
                 h,w=img.shape
                 top=np.ones((pad.height,w))*255
                 img=np.concatenate([top,img],axis=0)
-                char_map=np.concatenate([top,char_map],axis=0)
+                char_map=np.concatenate([np.zeros_like(top),char_map],axis=0)
                 
             if bp:
                 h,w=img.shape
                 bot=np.ones((pad.height,w))*255
                 img=np.concatenate([img,bot],axis=0)
-                char_map=np.concatenate([char_map,bot],axis=0)
+                char_map=np.concatenate([char_map,np.zeros_like(bot)],axis=0)
                 
         elif hf=="t":
             img=cv2.resize(img,pad.single_pad_dim,fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
@@ -194,7 +199,7 @@ def createHandwritenWords(df,
                 h,w=img.shape
                 bot=np.ones((pad.height,w))*255
                 img=np.concatenate([img,bot],axis=0)
-                char_map=np.concatenate([char_map,bot],axis=0)
+                char_map=np.concatenate([char_map,np.zeros_like(bot)],axis=0)
             
         elif hf=="b":
             img=cv2.resize(img,pad.single_pad_dim,fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
@@ -203,7 +208,7 @@ def createHandwritenWords(df,
                 h,w=img.shape
                 top=np.ones((pad.height,w))*255
                 img=np.concatenate([top,img],axis=0)
-                char_map=np.concatenate([top,char_map],axis=0)
+                char_map=np.concatenate([np.zeros_like(top),char_map],axis=0)
                 
                 
         elif hf=="bt" or hf=="tb":
