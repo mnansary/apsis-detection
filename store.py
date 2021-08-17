@@ -100,12 +100,12 @@ def genTFRecords(_paths,mode_dir):
 
 
 
-save_path ="/home/apsisdev/ansary/DATASETS/Detection/memo_table/mapped/"
+save_path ="/home/apsisdev/ansary/DATASETS/Detection/memo/"
 save_path =create_dir(save_path,"tfrecords")
 
 
 
-_imgs="/home/apsisdev/ansary/DATASETS/Detection/memo_table/mapped/image/"
+_imgs="/home/apsisdev/ansary/DATASETS/Detection/memo/image/"
 _paths=[img_path for img_path in tqdm(glob(os.path.join(_imgs,"*.*")))]
 
 
