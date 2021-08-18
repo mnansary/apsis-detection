@@ -17,7 +17,7 @@ import pandas as pd
 
 from .utils import stripPads,GraphemeParser,gaussian_heatmap
 GP=GraphemeParser()
-heatmap=gaussian_heatmap(size=512,distanceRatio=2.5)
+heatmap=gaussian_heatmap(size=512,distanceRatio=1.5)
 #-----------------------------------
 # line image
 #----------------------------------
