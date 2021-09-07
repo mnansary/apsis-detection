@@ -5,6 +5,9 @@
 #--------------------
 # imports
 #--------------------
+import sys
+sys.path.append('../')
+
 import argparse
 import os
 import cv2
@@ -14,8 +17,8 @@ from coreLib.config import config
 
 from coreLib.render import createSceneImage,backgroundGenerator,createImageData
 from coreLib.format import lineText,TotalText
-
-from coreLib.utils import create_dir,LOG_INFO,gaussian_heatmap 
+from coreLib.craft  import gaussian_heatmap
+from coreLib.utils import create_dir,LOG_INFO 
 from tqdm import tqdm
 
 #--------------------
@@ -66,7 +69,7 @@ def saveModeData(ds,backGen,nb,mode,fmt,img_dim):
     '''
     skipped=[]
     if fmt=="linetext":
-        heatmap=gaussian_heatmap(size=config.back_dim,distanceRatio=config.heatmap_ratio)
+        gheatmap=gaussian_heatmap(size=config.back_dim,distanceRatio=config.heatmap_ratio)
 
     for i in tqdm(range(nb)):
         try:
@@ -89,20 +92,19 @@ def saveModeData(ds,backGen,nb,mode,fmt,img_dim):
                     for line in text_lines:
                         f.write(f"{line}\n")
             elif fmt=="linetext":
-                char_mask,word_mask,heat_mask=lineText(page,labels,heatmap)    
+                heat_mask,link_mask=lineText(page,labels,gheatmap)    
                 # data formation
                 img_path =os.path.join(mode.imgs,f"img{i}.png")
-                char_path=os.path.join(mode.charmaps,f"img{i}.png")
-                word_path=os.path.join(mode.wordmaps,f"img{i}.png")
+                link_path=os.path.join(mode.linkmaps,f"img{i}.png")
                 heat_path=os.path.join(mode.heatmaps,f"img{i}.png")
                 # save
                 cv2.imwrite(img_path,cv2.resize(back,(img_dim,img_dim)))
-                cv2.imwrite(char_path,cv2.resize(char_mask,(img_dim,img_dim)))
-                cv2.imwrite(word_path,cv2.resize(word_mask,(img_dim,img_dim)))
-                cv2.imwrite(heat_path,cv2.resize(heat_mask,(img_dim,img_dim)))
+                cv2.imwrite(link_path,cv2.resize(link_mask,(img_dim,img_dim),fx=0,fy=0,interpolation=cv2.INTER_NEAREST))
+                cv2.imwrite(heat_path,cv2.resize(heat_mask,(img_dim,img_dim),fx=0,fy=0,interpolation=cv2.INTER_NEAREST))
                 
         except Exception as e:
-            LOG_INFO(f"Charecter Size too Short To extract: image number:{i}. Skipping Image",mcolor="red")
+            #print(e)
+            #LOG_INFO(f"Charecter Size too Short To extract: image number:{i}. Skipping Image",mcolor="red")
             skipped.append(i)
     LOG_INFO(f"Skipped Images:{len(skipped)}")
 
@@ -145,27 +147,28 @@ def main(args):
     #-------------------------
     # saving
     #------------------------
-    save_dir=create_dir(save_dir,f"{ds_iden}_{save_fmt}")
     
     class train:
-        dir=create_dir(save_dir,"training")
-        imgs=create_dir(dir,"imgs")
-        charmaps=create_dir(dir,"charmaps")
-        wordmaps=create_dir(dir,"wordmaps")
+        dir=create_dir(save_dir,f"{ds_iden}.train")
+        imgs=create_dir(dir,"images")
         if save_fmt=="totaltext":
+            charmaps=create_dir(dir,"charmaps")
+            wordmaps=create_dir(dir,"wordmaps")
             annotations=create_dir(dir,"annotations")
         elif save_fmt=="linetext":
             heatmaps=create_dir(dir,"heatmaps")
+            linkmaps=create_dir(dir,"linkmaps")
 
     class test:
-        dir=create_dir(save_dir,"test")
-        imgs=create_dir(dir,"imgs")
-        charmaps=create_dir(dir,"charmaps")
-        wordmaps=create_dir(dir,"wordmaps")
+        dir=create_dir(save_dir,f"{ds_iden}.test")
+        imgs=create_dir(dir,"images")
         if save_fmt=="totaltext":
+            charmaps=create_dir(dir,"charmaps")
+            wordmaps=create_dir(dir,"wordmaps")
             annotations=create_dir(dir,"annotations")
         elif save_fmt=="linetext":
             heatmaps=create_dir(dir,"heatmaps")
+            linkmaps=create_dir(dir,"linkmaps")
 
     saveModeData(ds,backGen,nb_train,train,save_fmt,img_dim)
     saveModeData(ds,backGen,nb_test,test,save_fmt,img_dim)
@@ -177,13 +180,13 @@ if __name__=="__main__":
         parsing and execution
     '''
     parser = argparse.ArgumentParser("Scenetext Detection Dataset Creation Script")
-    parser.add_argument("data_dir", help="Path of the source data folder ")
+    parser.add_argument("data_dir", help="Path of the base folder under source data folder ")
     parser.add_argument("save_dir", help="Path of the directory to save the dataset")
     parser.add_argument("format", help="The desired format for creating the data. Available:totaltext,linetext")
     parser.add_argument("dataset_iden", help="The desired name for  the dataset.Use something that can help you remember the generation details.Example: (bangla_synth) may indicate only bangla data")
     
-    parser.add_argument("--train_samples",required=False,default=10000,help ="number of train samples to create : default=10000")
-    parser.add_argument("--test_samples",required=False,default=1000,help ="number of test samples to create    : default=1000")
+    parser.add_argument("--train_samples",required=False,default=1500,help ="number of train samples to create : default=1500")
+    parser.add_argument("--test_samples",required=False,default=128,help ="number of test samples to create    : default=128")
     
     parser.add_argument("--cfg_data_dim",required=False,default=1024,help ="dimension of the image [Since only squre images are produced, providing one value is enough] : default=1024")
     parser.add_argument("--cfg_comp_dim",required=False,default=64,help ="height dimension for any kind of component : default=64")

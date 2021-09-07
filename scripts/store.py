@@ -12,14 +12,12 @@ import tensorflow as tf
 from tqdm import tqdm
 from glob import glob 
 import cv2 
+import argparse
 # ---------------------------------------------------------
 # globals
 # ---------------------------------------------------------
 # number of images to store in a tfrecord
-DATA_NUM  = 128
-
-
-
+DATA_NUM  = 64
 def create_dir(base,ext):
     '''
         creates a directory extending base
@@ -34,10 +32,6 @@ def create_dir(base,ext):
 #---------------------------------------------------------------
 def _bytes_feature(value):
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
-
-
-
-
 
 def to_tfrecord(image_paths,save_dir,r_num):
     '''	            
@@ -54,8 +48,8 @@ def to_tfrecord(image_paths,save_dir,r_num):
     with tf.io.TFRecordWriter(tfrecord_path) as writer:    
         for image_path in image_paths:
             
-            char_path=str(image_path).replace('image','charmap')
-            word_path=str(image_path).replace('image','wordmap')
+            char_path=str(image_path).replace('images','heatmaps')
+            word_path=str(image_path).replace('images','linkmaps')
             #image
             with(open(image_path,'rb')) as fid:
                 image_bytes=fid.read()
@@ -70,8 +64,8 @@ def to_tfrecord(image_paths,save_dir,r_num):
             
             
             data ={ 'image':_bytes_feature(image_bytes),
-                    'charmap':_bytes_feature(char_bytes),
-                    'wordmap':_bytes_feature(word_bytes)
+                    'heatmap':_bytes_feature(char_bytes),
+                    'linkmap':_bytes_feature(word_bytes)
             }
             
             
@@ -100,14 +94,19 @@ def genTFRecords(_paths,mode_dir):
 
 
 
-save_path ="/home/apsisdev/ansary/DATASETS/Detection/memo/"
-save_path =create_dir(save_path,"tfrecords")
+def main(args):
+    save_path =create_dir(args.save_dir,"tfrecords")
+    save_path =create_dir(save_path,args.ds_iden)
+    _paths=[img_path for img_path in tqdm(glob(os.path.join(args.data_dir,"*.*")))]
+    genTFRecords(_paths,save_path)
 
-
-
-_imgs="/home/apsisdev/ansary/DATASETS/Detection/memo/image/"
-_paths=[img_path for img_path in tqdm(glob(os.path.join(_imgs,"*.*")))]
-
-
-
-genTFRecords(_paths,save_path)
+if __name__=="__main__":
+    '''
+        parsing and execution
+    '''
+    parser = argparse.ArgumentParser("TFRecords Data Creation Script")
+    parser.add_argument("data_dir", help="Path to the images folder")
+    parser.add_argument("save_dir", help="Path to save the tfrecords")
+    parser.add_argument("ds_iden", help="dataset Identifier")
+    args = parser.parse_args()
+    main(args)

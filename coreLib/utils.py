@@ -11,7 +11,7 @@ import os
 import numpy as np
 import random
 import cv2
-from .config import config
+import matplotlib.pyplot as plt
 #---------------------------------------------------------------
 def LOG_INFO(msg,mcolor='blue'):
     '''
@@ -41,93 +41,8 @@ def stripPads(arr,val):
   arr=arr[~np.all(arr == val, axis=1)]
   arr=arr[:, ~np.all(arr == val, axis=0)]
   return arr
-#---------------------------------------------------------------
-def gaussian_heatmap(size=512, distanceRatio=2):
-    '''
-        creates a gaussian heatmap
-        This is a fixed operation to create heatmaps
-    '''
-    # distrivute values
-    v = np.abs(np.linspace(-size / 2, size / 2, num=size))
-    # create a value mesh grid
-    x, y = np.meshgrid(v, v)
-    # spreading heatmap
-    g = np.sqrt(x**2 + y**2)
-    g *= distanceRatio / (size / 2)
-    g = np.exp(-(1 / 2) * (g**2))
-    g *= 255
-    return g.clip(0, 255).astype('uint8')
-#---------------------------------------------------------------
-#--------------------
-# helpers
-#--------------------
-def padPage(img):
-    '''
-        pads a page image to proper dimensions
-    '''
-    h,w=img.shape 
-    if h>config.back_dim:
-        # resize height
-        height=config.back_dim
-        width= int(height* w/h) 
-        img=cv2.resize(img,(width,height),fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
-        # pad width
-        # mandatory check
-        h,w=img.shape 
-        # pad widths
-        left_pad_width =random.randint(0,(config.back_dim-w))
-        right_pad_width=config.back_dim-w-left_pad_width
-        # pads
-        left_pad =np.zeros((h,left_pad_width))
-        right_pad=np.zeros((h,right_pad_width))
-        # pad
-        img =np.concatenate([left_pad,img,right_pad],axis=1)
-    else:
-        _type=random.choice(["top","bottom","middle"])
-        if _type in ["top","bottom"]:
-            pad_height=config.back_dim-h
-            pad     =np.zeros((pad_height,config.back_dim))
-            if _type=="top":
-                img=np.concatenate([img,pad],axis=0)
-            else:
-                img=np.concatenate([pad,img],axis=0)
-        else:
-            # pad heights
-            top_pad_height =(config.back_dim-h)//2
-            bot_pad_height=config.back_dim-h-top_pad_height
-            # pads
-            top_pad =np.zeros((top_pad_height,w))
-            bot_pad=np.zeros((bot_pad_height,w))
-            # pad
-            img =np.concatenate([top_pad,img,bot_pad],axis=0)
-    # for error avoidance
-    img=cv2.resize(img,(config.back_dim,config.back_dim),fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
-    return img
 
-
-def processLine(img):
-    '''
-        fixes a line image 
-        args:
-            img        :  concatenated line images
-    '''
-    h,w=img.shape 
-    if w>config.back_dim:
-        width=config.back_dim-random.randint(0,300)
-        # resize
-        height= int(width* h/w) 
-        img=cv2.resize(img,(width,height),fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
-    # mandatory check
-    h,w=img.shape 
-    # pad widths
-    left_pad_width =random.randint(0,(config.back_dim-w))
-    right_pad_width=config.back_dim-w-left_pad_width
-    # pads
-    left_pad =np.zeros((h,left_pad_width),dtype=np.int64)
-    right_pad=np.zeros((h,right_pad_width),dtype=np.int64)
-    # pad
-    img =np.concatenate([left_pad,img,right_pad],axis=1)
-    return img 
+#---------------------------------------------------------------
 
 def randColor():
     '''
