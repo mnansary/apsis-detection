@@ -69,7 +69,7 @@ def saveModeData(ds,backGen,nb,mode,fmt,img_dim):
     '''
     skipped=[]
     if fmt=="linetext":
-        gheatmap=gaussian_heatmap(size=config.back_dim,distanceRatio=config.heatmap_ratio)
+        gheatmap=gaussian_heatmap(size=512,distanceRatio=config.heatmap_ratio)
 
     for i in tqdm(range(nb)):
         try:
@@ -209,7 +209,7 @@ if __name__=="__main__":
     parser.add_argument("--cfg_vert_min_space",required=False,default=1,help ="min space between two lines [in pixels] : default=1")
     parser.add_argument("--cfg_vert_max_space",required=False,default=100,help ="max space between two lines [in pixels] : default=100")
     
-    parser.add_argument("--cfg_heatmap_ratio",required=False,default=2,help =" heatmap distance ration if line text format is used[float available] : default=2 ")
+    parser.add_argument("--cfg_heatmap_ratio",required=False,default=1.5,help =" heatmap distance ration if line text format is used[float available] : default=2 ")
     
     parser.add_argument('--cfg_languages',nargs='+',required=False,default=["bangla","english"],
                         help='a list of language source to be used|| available:[bangla,english]. e.g., "--cfg_languages bangla englist", or "--cfg_languages bangla" (for single use) ')

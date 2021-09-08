@@ -1,5 +1,5 @@
 #!/bin/sh
-DATASET_MAIN_PATH="/media/ansary/DriveData/Work/APSIS/datasets/Detection/"
+DATASET_MAIN_PATH="/home/apsisdev/ansary/DATASETS/APSIS/Detection/"
 BS_README_TXT_PATH="${DATASET_MAIN_PATH}source/natrural/bs/README.txt"
 PROCESSED_PATH="${DATASET_MAIN_PATH}processed/"
 BASE_DATA_PATH="${DATASET_MAIN_PATH}source/base/"

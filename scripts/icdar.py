@@ -26,7 +26,7 @@ def main(args):
     heat_dir=create_dir(save_path,"heatmaps")
     link_dir=create_dir(save_path,"linkmaps")
 
-    gheatmap=gaussian_heatmap(size=1024,distanceRatio=4)
+    gheatmap=gaussian_heatmap(size=512,distanceRatio=1.5)
 
     for img_path in tqdm(img_paths):
         try:

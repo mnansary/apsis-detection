@@ -136,7 +136,7 @@ def main(args):
     iden=0
     dim=(args.height,args.width)
 
-    gheatmap=gaussian_heatmap(size=1024,distanceRatio=4)
+    gheatmap=gaussian_heatmap(size=512,distanceRatio=1.5)
     for img_path in tqdm(df.image.unique()):
         idf=df.loc[df.image==img_path]
         #-------------
