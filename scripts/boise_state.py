@@ -15,7 +15,7 @@ import pandas as pd
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
-from coreLib.utils import LOG_INFO,create_dir
+from coreLib.utils import *
 from coreLib.craft import gaussian_heatmap,get_maps
 from glob import glob
 from tqdm.auto import tqdm
@@ -172,6 +172,10 @@ def main(args):
                                                     prev,
                                                     idx)
         # save
+        img,_=padDetectionImage(img,pad_value=255)
+        heat_map,_=padDetectionImage(heat_map,gray=True,pad_value=0)
+        link_map,_=padDetectionImage(link_map,gray=True,pad_value=0)
+            
         img=cv2.resize(img,dim)
         cv2.imwrite(os.path.join(img_dir,f"{iden}.png"),img)
         heat_map=cv2.resize(heat_map,dim,fx=0,fy=0,interpolation = cv2.INTER_NEAREST)
