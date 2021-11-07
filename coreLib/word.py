@@ -16,6 +16,8 @@ import PIL.Image , PIL.ImageDraw , PIL.ImageFont
 from tqdm import tqdm
 from glob import glob
 
+from coreLib.utils import rotate_image
+
 from .config import config
 from .utils import stripPads
 tqdm.pandas()
@@ -237,10 +239,11 @@ def create_word(iden,
     
     # process data
     if data_type=="handwritten":
-        return createHandwritenWords(iden=iden,df=df,comps=comps)
+        img,label,iden=createHandwritenWords(iden=iden,df=df,comps=comps)
     else:
-        return createPrintedWords(iden=iden,comps=comps,fonts=fonts)
-
+        img,label,iden=createPrintedWords(iden=iden,comps=comps,fonts=fonts)
+    img=rotate_image(img,random.randint(-90,90))
+    return img,label,iden
 
 
     

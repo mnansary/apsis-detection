@@ -70,11 +70,6 @@
         ......................
 ```
 
-# Styles Dataset
-* TO BE UPLOADED WITH NID STYLING
-
-
-
 # Final Data Source Directory Structre:
 
 ```

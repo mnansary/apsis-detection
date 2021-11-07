@@ -191,8 +191,8 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser("Boise State to Craft Dataset Creation Script")
     parser.add_argument("readme_txt_path", help="Path to The **README.txt** file under **bs**folder")
     parser.add_argument("save_path", help="Path to save the processed data")
-    parser.add_argument("--height",required=False,default=1024,help ="height dimension of the image : default=1024")
-    parser.add_argument("--width",required=False,default=1024,help ="width dimension of the image : default=1024")
+    parser.add_argument("--height",required=False,default=786,help ="height dimension of the image : default=786")
+    parser.add_argument("--width",required=False,default=786,help ="width dimension of the image : default=786")
     args = parser.parse_args()
     main(args)
     

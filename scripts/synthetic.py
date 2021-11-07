@@ -188,7 +188,7 @@ if __name__=="__main__":
     parser.add_argument("--train_samples",required=False,default=1500,help ="number of train samples to create : default=1500")
     parser.add_argument("--test_samples",required=False,default=128,help ="number of test samples to create    : default=128")
     
-    parser.add_argument("--cfg_data_dim",required=False,default=1024,help ="dimension of the image [Since only squre images are produced, providing one value is enough] : default=1024")
+    parser.add_argument("--cfg_data_dim",required=False,default=786,help ="dimension of the image [Since only squre images are produced, providing one value is enough] : default=786")
     parser.add_argument("--cfg_comp_dim",required=False,default=64,help ="height dimension for any kind of component : default=64")
     
     parser.add_argument("--cfg_min_num_lines",required=False,default=1,help ="min number of lines per image : default=1")
