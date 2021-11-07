@@ -243,6 +243,9 @@ def create_word(iden,
     else:
         img,label,iden=createPrintedWords(iden=iden,comps=comps,fonts=fonts)
     img=rotate_image(img,random.randint(-90,90))
+    h,w=img.shape 
+    width= int(config.comp_dim* w/h) 
+    img=cv2.resize(img,(width,config.comp_dim),fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
     return img,label,iden
 
 
