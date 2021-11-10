@@ -109,7 +109,7 @@ def get_maps(cbox,gaussian_heatmap,heat_map,link_map,prev,idx):
                             [cx3,cy3], 
                             [cx4,cy4]]).astype('float32')
     M_heat = cv2.getPerspectiveTransform(src=src,dst=heat_points)
-    heat_map+=cv2.warpPerspective(gaussian_heatmap,M_heat, dsize=(heat_map.shape[1],heat_map.shape[0])).astype('float32')
+    heat_map+=cv2.warpPerspective(gaussian_heatmap,M_heat, dsize=(heat_map.shape[1],heat_map.shape[0]),flags=cv2.INTER_NEAREST).astype('float32')
 
     #-------------------------------
     # link map
@@ -125,6 +125,6 @@ def get_maps(cbox,gaussian_heatmap,heat_map,link_map,prev,idx):
             lx1,lx4,ly1,ly4=prev[idx-1]
             link_points = np.array([[lx1,ly1], [lx2,ly2], [lx3,ly3], [lx4,ly4]]).astype('float32')
             M_link = cv2.getPerspectiveTransform(src=src,dst=link_points)
-            link_map+=cv2.warpPerspective(gaussian_heatmap,M_link, dsize=(link_map.shape[1],link_map.shape[0])).astype('float32')
+            link_map+=cv2.warpPerspective(gaussian_heatmap,M_link, dsize=(link_map.shape[1],link_map.shape[0]),flags=cv2.INTER_NEAREST).astype('float32')
 
     return heat_map,link_map,prev
