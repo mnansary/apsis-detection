@@ -162,10 +162,21 @@ def createSceneImage(ds,iden=3):
                                         use_dict=random.choice([True,False]))
             line_labels.append(label)
             line_parts.append(img)
-
+        
+        reformed=[]
+        max_h=0
+        # find max height
+        for line_part in line_parts:
+            max_h=max(max_h,line_part.shape[0])
+        # reform
+        for limg in line_parts:
+            h,w=limg.shape 
+            width= int(max_h* w/h) 
+            limg=cv2.resize(limg,(width,max_h),fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
+            reformed.append(limg)
 
         # create the line image
-        line_img=np.concatenate(line_parts,axis=1)
+        line_img=np.concatenate(reformed,axis=1)
         line_img=processLine(line_img)
         # the page lines
         page_parts.append(line_img)

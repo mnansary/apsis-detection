@@ -134,5 +134,5 @@ models/*
 fonts/*
 .vscode/*
 __todo__/*
-debug_data.ipynb 
+debug*.ipynb 
 unstable/*
