@@ -5,9 +5,8 @@ PROCESSED_PATH="${DATASET_MAIN_PATH}processed/"
 BASE_DATA_PATH="${DATASET_MAIN_PATH}source/base/"
 ICDAR_DATA_PATH="${DATASET_MAIN_PATH}source/natrural/icdar/Images/"
 # synthetic
-python synthetic.py $BASE_DATA_PATH $PROCESSED_PATH linetext synth --train_samples 50000
-python store.py "${PROCESSED_PATH}synth.train/images/" $DATASET_MAIN_PATH synth.train 
-#python store.py "${PROCESSED_PATH}synth.test/images/" $DATASET_MAIN_PATH synth.test 
+python craftsynth.py $BASE_DATA_PATH $PROCESSED_PATH "synth" --train_samples 50000
+python store.py "${PROCESSED_PATH}synth/images/" $DATASET_MAIN_PATH synth.train 
 # icdar
 python icdar.py $ICDAR_DATA_PATH $PROCESSED_PATH
 python store.py "${PROCESSED_PATH}icdar/images/" $DATASET_MAIN_PATH icdar 

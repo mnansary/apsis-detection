@@ -17,7 +17,7 @@ import argparse
 # globals
 # ---------------------------------------------------------
 # number of images to store in a tfrecord
-DATA_NUM  = 64
+DATA_NUM  = 128
 def create_dir(base,ext):
     '''
         creates a directory extending base
