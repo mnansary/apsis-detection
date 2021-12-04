@@ -128,3 +128,36 @@ def get_maps(cbox,gaussian_heatmap,heat_map,link_map,prev,idx):
             link_map+=cv2.warpPerspective(gaussian_heatmap,M_link, dsize=(link_map.shape[1],link_map.shape[0]),flags=cv2.INTER_NEAREST).astype('float32')
 
     return heat_map,link_map,prev
+
+def get_maps_from_masked_images(img,gmap):
+    '''
+        args:
+            img     :   marked image
+            gmap    :   gausian heatmap
+        returns:
+            img     :       word image
+            hmap    :       heat map of the image
+            lmap    :       link map of the image
+    '''
+    # link mask
+    lmap=np.zeros(img.shape)
+    # heat mask
+    hmap=np.zeros(img.shape)
+
+    vals=[v for v in np.unique(img) if v>0]
+    num_char=len(vals)
+    # maps
+    if num_char>1:
+        prev=[[] for _ in range(num_char)]
+    else:
+        prev=None
+    
+    for cidx,v in enumerate(vals):
+        if v>0:
+            idx = np.where(img==v)
+            y_min,y_max,x_min,x_max = np.min(idx[0]), np.max(idx[0]), np.min(idx[1]), np.max(idx[1])
+            hmap,lmap,prev=get_maps([x_min,y_min,x_max,y_max],gmap,hmap,lmap,prev,cidx)
+                        
+    lmap=lmap.astype("uint8")
+    hmap=hmap.astype("uint8")
+    return img,hmap,lmap

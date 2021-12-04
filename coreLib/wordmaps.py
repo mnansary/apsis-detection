@@ -6,48 +6,133 @@
 # imports
 #--------------------
 import os
+from numpy.lib.function_base import angle
 import pandas as pd
 import random
 import cv2
 import numpy as np
 import PIL
 import PIL.Image , PIL.ImageDraw , PIL.ImageFont 
-
+from wand.image import Image as WImage
 from tqdm import tqdm
 from glob import glob
 
 from coreLib.utils import rotate_image
 
 from .config import config
-from .utils import stripPads
+from .utils import stripPads,random_exec
+from .craft import get_maps_from_masked_images
 tqdm.pandas()
+
+#--------------------
+# processing functions 
+#--------------------
+def get_warped_maps(img,hmap,lmap,warp_vec,coord):
+    '''
+        returns warped image and new coords
+        args:
+            img      : image to warp
+            hmap     : heat map of the image
+            lmap     : link map of the image
+            warp_vec : which vector to warp
+            coord    : list of current coords
+              
+    '''
+    height,width=img.shape
+ 
+    # construct dict warp
+    x1,y1=coord[0]
+    x2,y2=coord[1]
+    x3,y3=coord[2]
+    x4,y4=coord[3]
+    # warping calculation
+    xwarp=random.randint(0,config.max_warp_perc)/100
+    ywarp=random.randint(0,config.max_warp_perc)/100
+    # construct destination
+    dx=int(width*xwarp)
+    dy=int(height*ywarp)
+    # const
+    if warp_vec=="p1":
+        dst= [[dx,dy], [x2,y2],[x3,y3],[x4,y4]]
+    elif warp_vec=="p2":
+        dst=[[x1,y1],[x2-dx,dy],[x3,y3],[x4,y4]]
+    elif warp_vec=="p3":
+        dst= [[x1,y1],[x2,y2],[x3-dx,y3-dy],[x4,y4]]
+    else:
+        dst= [[x1,y1],[x2,y2],[x3,y3],[dx,y4-dy]]
+    M   = cv2.getPerspectiveTransform(np.float32(coord),np.float32(dst))
+    img = cv2.warpPerspective(img, M, (width,height),flags=cv2.INTER_NEAREST)
+    hmap= cv2.warpPerspective(hmap, M, (width,height),flags=cv2.INTER_NEAREST)
+    lmap= cv2.warpPerspective(lmap, M, (width,height),flags=cv2.INTER_NEAREST)
+    return img,hmap,lmap,dst
+
+def warp_map_wrapper(img,hmap,lmap):
+    '''
+    args:
+        img      : image to warp
+        hmap     : heat map of the image
+        lmap     : link map of the image
+    '''
+    warp_types=["p1","p2","p3","p4"]
+    height,width=img.shape
+
+    coord=[[0,0], 
+        [width-1,0], 
+        [width-1,height-1], 
+        [0,height-1]]
+
+    # warp
+    for i in range(2):
+        if i==0:
+            idxs=[0,2]
+        else:
+            idxs=[1,3]
+        if random_exec():    
+            idx=random.choice(idxs)
+            img,hmap,lmap,coord=get_warped_maps(img,hmap,lmap,warp_types[idx],coord)
+    return img,hmap,lmap
+
+
+def curve_data(img,angle,cangle):
+    with WImage.from_array(img) as wimg:
+        wimg.virtual_pixel = 'black'
+        wimg.distort('arc',(angle,cangle))
+        wimg=np.array(wimg)
+    return wimg
+
+
+def curve_maps(img,hmap,lmap):
+    '''
+    args:
+        img      : image to warp
+        hmap     : heat map of the image
+        lmap     : link map of the image
+    '''
+    angle=random.randint(30,180)
+    cangle=random.choice([0,180])
+    img=curve_data(img,angle,cangle)
+    hmap=curve_data(hmap,angle,cangle)
+    lmap=curve_data(lmap,angle,cangle)
+    return img,hmap,lmap
+
+
 #--------------------
 # word functions 
 #--------------------
-def addSpace(img,iden):
-    '''
-        adds a space at the end of the word
-    '''
-    h,_=img.shape
-    width=random.randint(config.word_min_space,config.word_max_space)
-    space=np.ones((h,width))*iden
-    return np.concatenate([img,space],axis=1)
 
-
-def createHandwritenWords(iden,
-                         df,
-                         comps):
+def createHandwritenWords(df,comps,gmap):
     '''
         creates handwriten word image
         args:
-            iden    :       identifier marking value starting
             df      :       the dataframe that holds the file name and label
-            comps   :       the list of components 
+            comps   :       the list of components
+            gmap    :       gaussian heatmap
         returns:
-            img     :       marked word image
-            label   :       dictionary of label {iden:label}
-            iden    :       the final identifier
+            img     :       word image
+            hmap    :       heat map of the image
+            lmap    :       link map of the image
     '''
+    iden=2
     comps=[str(comp) for comp in comps]
     # select a height
     height=config.comp_dim
@@ -56,7 +141,6 @@ def createHandwritenWords(iden,
     while comps[0] in mods:
         comps=comps[1:]
     # construct labels
-    label={}
     imgs=[]
     for comp in comps:
         c_df=df.loc[df.label==comp]
@@ -74,37 +158,28 @@ def createHandwritenWords(iden,
         data=np.zeros(img.shape)
         data[img>0]      =   iden
         imgs.append(data)
-        # label
-        label[iden] = comp 
         iden+=1
-    img=np.concatenate(imgs,axis=1)
-    # add space
-    img=addSpace(img,iden)
-    label[iden]=' '
-    iden+=1
-    return img,label,iden
 
-def createPrintedWords(iden,
-                       comps,
-                       fonts):
+    # maps    
+    img=np.concatenate(imgs,axis=1)
+    return get_maps_from_masked_images(img,gmap)
+
+def createPrintedWords(gmap,comps,fonts):
     '''
         creates printed word image
         args:
-            iden    :       identifier marking value starting
+            gmap    :       gaussian heatmap
             comps   :       the list of components
             fonts   :       available font paths 
         returns:
-            img     :       marked word image
-            label   :       dictionary of label {iden:label}
-            iden    :       the final identifier
+            img     :       word image
+            hmap    :       heat map of the image
+            lmap    :       link map of the image
     '''
     
     comps=[str(comp) for comp in comps]
     # select a font size
     font_size=config.comp_dim
-    # max dim
-    min_offset=100
-    max_dim=len(comps)*font_size+min_offset
     # reconfigure comps
     mods=['ঁ', 'ং', 'ঃ']
     for idx,comp in enumerate(comps):
@@ -116,28 +191,17 @@ def createPrintedWords(iden,
     # font path
     font_path=random.choice(fonts)
     font=PIL.ImageFont.truetype(font_path, size=font_size)
-    # sizes of comps
-    # comp_sizes = [font.font.getsize(comp) for comp in comps] 
+    
     # construct labels
-    label={}
     imgs=[]
     comp_str=''
     for comp in comps:
         comp_str+=comp
-        # # calculate increment
-        # (comp_width,_),(offset,_)=comp_size
-        # dx = comp_width+offset 
         # draw
-        image = PIL.Image.new(mode='L', size=(max_dim,max_dim))
+        image = PIL.Image.new(mode='L', size=font.getsize("".join(comps)))
         draw = PIL.ImageDraw.Draw(image)
-        #draw.text(xy=(x, y), text=comp, fill=iden, font=font)
         draw.text(xy=(0, 0), text=comp_str, fill=1, font=font)
-        
         imgs.append(np.array(image))
-        # x+=dx
-        # label
-        label[iden] = comp 
-        iden+=1
         
         
     # add images
@@ -149,26 +213,24 @@ def createPrintedWords(iden,
     vals=vals[:-1]
     
     _img=np.zeros(img.shape)
-    for v,l in zip(vals,label.keys()):
-        _img[img==v]=l
+    iden=2
+    for v in vals:
+        _img[img==v]=iden
+        iden+=1
     
-    # add space
-    _img=addSpace(_img,iden)
-    label[iden]=' '
-    iden+=1
-    # resize
     # resize
     h,w=_img.shape 
     width= int(font_size* w/h) 
+    img=cv2.resize(_img,(width,font_size),fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
+    return get_maps_from_masked_images(img,gmap)
     
-    _img=cv2.resize(_img,(width,font_size),fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
-    return _img,label,iden
 
 
 #-----------------------------------
 # wrapper
 #----------------------------------
-def create_word(iden,
+def create_word(gmap,
+                word_iden,
                 source_type,
                 data_type,
                 comp_type,
@@ -177,7 +239,8 @@ def create_word(iden,
     '''
         creates a marked word image
         args:
-            iden                    :       identifier marking value starting
+            gmap                    :       gaussian heatmap
+            word_iden               :       word indentifier
             source_type             :       bangla/english 
             data_type               :       handwritten/printed                  
             comp_type               :       grapheme/number/mixed
@@ -239,10 +302,26 @@ def create_word(iden,
     
     # process data
     if data_type=="handwritten":
-        img,label,iden=createHandwritenWords(iden=iden,df=df,comps=comps)
+        img,hmap,lmap=createHandwritenWords(df=df,comps=comps,gmap=gmap)
     else:
-        img,label,iden=createPrintedWords(iden=iden,comps=comps,fonts=fonts)
-    return img,label,iden
+        img,hmap,lmap=createPrintedWords(gmap=gmap,comps=comps,fonts=fonts)
+    
+
+    # warp
+    if random_exec(weights=[0.3,0.7]):
+        img,hmap,lmap=warp_map_wrapper(img,hmap,lmap)
+    # rotate/curve
+    if random_exec(weights=[0.5,0.5]):
+        if random_exec(weights=[0.5,0.5]):
+            angle=random.randint(-90,90)
+            img=rotate_image(img,angle)
+            hmap=rotate_image(hmap,angle)
+            lmap=rotate_image(lmap,angle)
+        else:
+            img,hmap,lmap=curve_maps(img,hmap,lmap)
+
+    img[img>0]=word_iden    
+    return np.squeeze(img),np.squeeze(hmap),np.squeeze(lmap)
 
 
     

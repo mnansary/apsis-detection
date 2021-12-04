@@ -33,6 +33,9 @@ def create_dir(base,ext):
     if not os.path.exists(_path):
         os.mkdir(_path)
     return _path
+
+def random_exec(poplutation=[0,1],weights=[0.7,0.3],match=0):
+    return random.choices(population=poplutation,weights=weights,k=1)[0]==match
 #---------------------------------------------------------------
 def stripPads(arr,val):
   '''
@@ -114,6 +117,8 @@ def rotate_image(mat, angle):
     # rotate image with the new bounds and translated rotation matrix
     rotated_mat = cv2.warpAffine(mat, rotation_mat, (bound_w, bound_h),flags=cv2.INTER_NEAREST)
     return rotated_mat
+
+
 
 '''
     @author: Tahsin Reasat

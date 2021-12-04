@@ -29,6 +29,7 @@ class config:
     back_dim        =   1024
     
     heatmap_ratio   =  2
+    max_warp_perc   =  20
 
     class data:
         sources     =   ["bangla","english"]
