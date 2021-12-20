@@ -184,5 +184,48 @@ class GraphemeParser():
             # so, df_cd is not used in the code
 
         return graphemes
-
+#----------------------------------
+# noise
+#----------------------------------
     
+def draw_random_noise(back,page):
+    '''
+        draws random poly
+    '''
+    y_idx, x_idx = np.where(page==0)   
+    h,w,d=back.shape
+    min_dim=min(h,w)
+    
+    for _ in range(random.randint(1,5)):
+        ntype=random.choice([0,1])
+        
+        num_points=random.randint(min_dim//100,min_dim//5)
+        rand_idx1 = random.choice(y_idx)   #randomly choose any element in the x_idx list
+        x1 = x_idx[rand_idx1]
+        y1 = y_idx[rand_idx1] 
+        if ntype==0:
+            for i in range(0,num_points):
+                
+                x2 = x1+random.randint(-10,10)
+                y2 = y1+random.randint(2,5)
+                if x2>w:
+                    x2=w
+                if y2>h:
+                    y2=h
+                cv2.line(back,(x1,y1),(x2,y2),(0,0,0),random.randint(2,10))
+                x1=x2
+                y1=y2 
+        else:
+            for i in range(0,num_points):
+                
+                x2 = x1+random.randint(2,5)
+                y2 = y1+random.randint(-10,10)
+                if x2>w:
+                    x2=w
+                if y2>h:
+                    y2=h
+                cv2.line(back,(x1,y1),(x2,y2),(0,0,0),random.randint(2,10))
+                x1=x2
+                y1=y2
+
+    return back

@@ -14,7 +14,7 @@ from glob import glob
 from tqdm import tqdm
 from .config import config
 from .wordmaps import create_word
-from .utils import randColor
+from .utils import draw_random_noise, randColor, random_exec
 
 def padMaps(img,hmap,lmap):
     '''
@@ -209,5 +209,110 @@ def createSceneMaps(ds,gmap,backgen):
         col=randColor()
         back[img==v]=col
     
+        
+    return back,hmap,lmap
+
+def createNoisyMaps(ds,gmap):
+    '''
+        creates a scene image
+        args:
+            ds      :  the dataset object
+            gmap    :       gaussian heatmap
+    '''
+    word_iden=1
+    page_imgs=[]
+    page_hmaps=[]
+    page_lmaps=[]
+    
+    # select number of lines in an image
+    num_lines=random.randint(config.min_num_lines,config.max_num_lines)
+    for _ in range(num_lines):
+        line_imgs=[]
+        line_hmaps=[]
+        line_lmaps=[]
+        
+        # select number of words
+        num_words=random.randint(config.min_num_words,config.max_num_words)
+        for _ in range(num_words):
+            img,hmap,lmap=create_word( gmap=gmap,
+                                        word_iden=word_iden,
+                                        source_type=random.choice(config.data.sources),
+                                        data_type=random.choice(config.data.formats),
+                                        comp_type=random.choice(config.data.components), 
+                                        ds=ds,
+                                        use_dict=random.choice([True,False]))
+            line_imgs.append(img)
+            line_hmaps.append(hmap)
+            line_lmaps.append(lmap)
+            word_iden+=1
+            
+        
+        # reform
+        rline_imgs=[]
+        rline_hmaps=[]
+        rline_lmaps=[]
+        max_h=0
+        # find max height
+        for line_img in line_imgs:
+            max_h=max(max_h,line_img.shape[0])
+        
+        # reform
+        for img,hmap,lmap in zip(line_imgs,line_hmaps,line_lmaps):
+            h,w=img.shape 
+            width= int(max_h* w/h) 
+            img=cv2.resize(img,(width,max_h),fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
+            hmap=cv2.resize(hmap,(width,max_h),fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
+            lmap=cv2.resize(lmap,(width,max_h),fx=0,fy=0, interpolation = cv2.INTER_NEAREST)
+            
+            rline_imgs.append(img)
+            rline_hmaps.append(hmap)
+            rline_lmaps.append(lmap)
+            
+
+        # create the line image
+        line_img=np.concatenate(rline_imgs,axis=1)
+        line_hmap=np.concatenate(rline_hmaps,axis=1)
+        line_lmap=np.concatenate(rline_lmaps,axis=1)
+        
+
+        line_img,line_hmap,line_lmap=processLineMaps(line_img,line_hmap,line_lmap)
+        # the page lines
+        page_imgs.append(line_img)
+        page_hmaps.append(line_hmap)
+        page_lmaps.append(line_lmap)
+        
+    imgs=[]
+    hmaps=[]
+    lmaps=[]
+    for img,hmap,lmap in zip(page_imgs,page_hmaps,page_lmaps):
+        # pad lines 
+        pad_height=random.randint(config.vert_min_space,config.vert_max_space)
+        pad     =np.zeros((pad_height,config.back_dim))
+        img=np.concatenate([img,pad],axis=0)
+        hmap=np.concatenate([hmap,pad],axis=0)
+        lmap=np.concatenate([lmap,pad],axis=0)
+        
+        imgs.append(img)
+        hmaps.append(hmap)
+        lmaps.append(lmap)
+        
+
+    # page data img
+    img=np.concatenate(imgs,axis=0)
+    hmap=np.concatenate(hmaps,axis=0)
+    lmap=np.concatenate(lmaps,axis=0)
+    img,hmap,lmap=padMaps(img,hmap,lmap)
+
+    # scene
+    h,w=img.shape
+    back=np.ones((h,w,3))*255
+    back=back.astype("uint8")
+    vals=[v for v in np.unique(img) if v>0]
+
+    for v in vals:
+        col=randColor()
+        back[img==v]=(0,0,0)
+    if random_exec():
+        back=draw_random_noise(back,img)
         
     return back,hmap,lmap
